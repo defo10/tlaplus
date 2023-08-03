@@ -1,27 +1,40 @@
 ---- MODULE CyclicRedefine ----
 EXTENDS Base, TLC
 
-ReDefNext ==
-    Next /\ ~A
+ReDefInit ==
+    /\ x \in BOOLEAN
+    /\ Init
 
-ReDefA ==
-    /\ x' = Print("ReDef", FALSE)
-    /\ A
+ReDefNext ==
+    Next /\ ~A(1)
+
+ReDefA(n) ==
+    /\ x' = Print(<<"ReDef", n>>, FALSE)
+    /\ A(n)
+
+YetAnotherOp(s, b, P(_)) ==
+	Print("ReDefOp", P(b))
 
 ReDefOp(b) ==
-	Print("ReDefOp", Op(FALSE))
+    YetAnotherOp("ReDefOp", b, Op)
+	
+ReDefInv ==
+	Inv /\ x = FALSE
 =====
-
 ----- MODULE Base -----
 VARIABLE x
 
-Init == x = FALSE     \* line  4
+Init == x = FALSE                      \* line  4
 
-Op(b) == ~b           \* line  6
+Op(b) == ~b                            \* line  6
 
-A== x' = Op(FALSE)    \* line  8
+A(n)== x' = Op(FALSE)                  \* line  8
 
-B== x' = FALSE        \* line 10
+B== x' = FALSE                         \* line 10
 
-Next == A \/ B        \* line 12
+Next == \E i \in {1,2,3}: A(i) \/ B    \* line 12
+
+Inv ==
+	x \in BOOLEAN
+
 ====

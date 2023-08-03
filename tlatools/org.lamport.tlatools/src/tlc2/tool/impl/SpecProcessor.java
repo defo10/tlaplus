@@ -817,11 +817,23 @@ public class SpecProcessor implements ValueConstants, ToolGlobals {
                 }
                 if ((myVal instanceof OpDefNode))
                 {
-                	if (rootOpDefs[i].getNumberOfArgs() != ((OpDefNode) myVal).getNumberOfArgs()) {
+                	OpDefNode odn = (OpDefNode) myVal;
+                	if (rootOpDefs[i].getNumberOfArgs() != odn.getNumberOfArgs()) {
                 		Assert.fail(EC.TLC_CONFIG_WRONG_SUBSTITUTION_NUMBER_OF_ARGS, new String[] { lhs.toString(), rhs });
                 	}
-                	if (((OpDefNode) myVal).isDefinedWith(rootOpDefs[i])) {
-                		cyclicRedefs.add(rootOpDefs[i]);
+                	if (odn.isDefinedWith(rootOpDefs[i])) {
+                		// A cyclic redefinition RF is a formula that is defined from another formula
+                		// F while also re-defining F:
+                		// 
+                		// F == /\ A
+                		//      /\ B
+                		//      /\ C
+                		//
+                		// RF == /\ F
+                		//       /\ D
+                		//
+                		// CONSTANT F <- RF
+                		cyclicRedefs.put(odn, rootOpDefs[i]);
                 	}
                 }
                 rootOpDefs[i].setToolObject(toolId, myVal);
@@ -1919,10 +1931,19 @@ public class SpecProcessor implements ValueConstants, ToolGlobals {
 		return this.specObj.getPostConditionSpecs();
 	}
 	
-	private final Set<SemanticNode> cyclicRedefs = new HashSet<>();
+	// The domain contains the definitions that redefine the definitions in the co-domain.
+	private final Map<SemanticNode, SemanticNode> cyclicRedefs = new HashMap<>();
 
-	public void postActionProcessing() {
-		cyclicRedefs.forEach(sn -> sn.setToolObject(toolId, null));
-		cyclicRedefs.clear();
+	public void unsetCyclicDefinition(final OpDefNode to) {
+		// Unsetting/Breaking the cyclic definition mapping from  from  to  to, that would
+		// otherwise cause a StackOverflow during model checking.
+		// Remove the mapping because TLC creates N Action instances for expressions such
+		// as \E n \in N : A(n), but we only want to unset it for one instance because of
+		// the assertion.
+		final SemanticNode from = cyclicRedefs.remove(to);
+		if (from != null) {
+			assert from.getToolObject(toolId) == to;
+			from.setToolObject(toolId, null);
+		}
 	}
 }

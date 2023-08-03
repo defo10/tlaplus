@@ -67,6 +67,6 @@ public class CyclicRedefineSubActionTest extends ModelCheckerTestCase {
 		assertFalse(recorder.recorded(EC.GENERAL));
 		
 		assertTrue(recorder.recordedWithStringValue(EC.TLC_SEARCH_DEPTH, "1"));
-		assertTrue(recorder.recordedWithStringValues(EC.TLC_STATS, "2", "1", "0"));
+		assertTrue(recorder.recordedWithStringValues(EC.TLC_STATS, "4", "1", "0"));
 	}
 }

@@ -68,7 +68,7 @@ public class CyclicRedefineOpTest extends ModelCheckerTestCase {
 		assertTrue(recorder.recorded(EC.TLC_FINISHED));
 		assertFalse(recorder.recorded(EC.GENERAL));
 		
-		assertTrue(recorder.recordedWithStringValue(EC.TLC_SEARCH_DEPTH, "1"));
-		assertTrue(recorder.recordedWithStringValues(EC.TLC_STATS, "1", "1", "0"));
+		assertTrue(recorder.recordedWithStringValue(EC.TLC_SEARCH_DEPTH, "2"));
+		assertTrue(recorder.recordedWithStringValues(EC.TLC_STATS, "13", "2", "0"));
 	}
 }

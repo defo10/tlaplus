@@ -8,11 +8,13 @@
 package tlc2.tool.impl;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import tla2sany.parser.SyntaxTreeNode;
 import tla2sany.semantic.APSubstInNode;
@@ -239,7 +241,8 @@ public abstract class Tool
 			initAndNext.elementAt(i).setId(i);
 		}
 		
-		getSpecProcessor().postActionProcessing();
+		Stream.concat(initAndNext.stream(), Arrays.stream(getInvariants()))
+				.forEach(a -> getSpecProcessor().unsetCyclicDefinition(a.getOpDef()));
   }
 
   Tool(Tool other) {
@@ -356,6 +359,8 @@ public abstract class Tool
                 IValue aval = this.eval(args[i], con, TLCState.Empty, cm);
                 con1 = con1.cons(formals[i], aval);
               }
+				// Recurse/go deeper if none of the (formal) parameters are of state-level or
+				// higher. In other words, only recurse if the params are constant level.
               this.getActions(opDef.getBody(), con1, opDef, cm);
               return;
             }
