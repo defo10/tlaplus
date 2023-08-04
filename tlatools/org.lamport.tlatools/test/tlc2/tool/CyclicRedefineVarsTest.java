@@ -35,10 +35,10 @@ import org.junit.Test;
 import tlc2.output.EC;
 import tlc2.tool.liveness.ModelCheckerTestCase;
 
-public class CyclicRedefineOpTest extends ModelCheckerTestCase {
+public class CyclicRedefineVarsTest extends ModelCheckerTestCase {
 
-	public CyclicRedefineOpTest() {
-		super("CyclicRedefine", new String[] { "-config", "CyclicRedefineOp.cfg" }, EC.ExitStatus.SUCCESS);
+	public CyclicRedefineVarsTest() {
+		super("CyclicRedefineVars", EC.ExitStatus.SUCCESS);
 	}
 
 	@Override
@@ -66,7 +66,7 @@ public class CyclicRedefineOpTest extends ModelCheckerTestCase {
 		assertTrue(recorder.recorded(EC.TLC_FINISHED));
 		assertFalse(recorder.recorded(EC.GENERAL));
 		
-		assertTrue(recorder.recordedWithStringValue(EC.TLC_SEARCH_DEPTH, "2"));
-		assertTrue(recorder.recordedWithStringValues(EC.TLC_STATS, "13", "2", "0"));
+		assertTrue(recorder.recordedWithStringValue(EC.TLC_SEARCH_DEPTH, "3"));
+		assertTrue(recorder.recordedWithStringValues(EC.TLC_STATS, "25", "4", "0"));
 	}
 }

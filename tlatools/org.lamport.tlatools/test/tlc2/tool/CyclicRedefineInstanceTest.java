@@ -29,16 +29,18 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Test;
 
 import tlc2.output.EC;
 import tlc2.tool.liveness.ModelCheckerTestCase;
 
-public class CyclicRedefineOpTest extends ModelCheckerTestCase {
+public class CyclicRedefineInstanceTest extends ModelCheckerTestCase {
 
-	public CyclicRedefineOpTest() {
-		super("CyclicRedefine", new String[] { "-config", "CyclicRedefineOp.cfg" }, EC.ExitStatus.SUCCESS);
+	public CyclicRedefineInstanceTest() {
+		super("CyclicRedefineInstance", new String[] { "-config", "CyclicRedefineInstance.cfg" }, EC.ExitStatus.VIOLATION_SAFETY);
 	}
 
 	@Override
@@ -67,6 +69,19 @@ public class CyclicRedefineOpTest extends ModelCheckerTestCase {
 		assertFalse(recorder.recorded(EC.GENERAL));
 		
 		assertTrue(recorder.recordedWithStringValue(EC.TLC_SEARCH_DEPTH, "2"));
-		assertTrue(recorder.recordedWithStringValues(EC.TLC_STATS, "13", "2", "0"));
+		assertTrue(recorder.recordedWithStringValues(EC.TLC_STATS, "3", "2", "0"));
+
+		// Assert the error trace
+		assertTrue(recorder.recorded(EC.TLC_STATE_PRINT2));
+		final List<String> expectedTrace = new ArrayList<String>(7);
+		// Trace prefix
+		expectedTrace.add("x = FALSE");
+		expectedTrace.add("x = TRUE");
+
+		final List<String> expectedActions = new ArrayList<>();
+		expectedActions.add(TLCStateInfo.INITIAL_PREDICATE);
+		expectedActions.add("<ReDefNext line 7, col 15 to line 7, col 23 of module CyclicRedefineInstance>");
+
+		assertTraceWith(recorder.getRecords(EC.TLC_STATE_PRINT2), expectedTrace, expectedActions);
 	}
 }

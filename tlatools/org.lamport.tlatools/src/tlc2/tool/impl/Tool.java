@@ -8,13 +8,11 @@
 package tlc2.tool.impl;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import tla2sany.parser.SyntaxTreeNode;
 import tla2sany.semantic.APSubstInNode;
@@ -240,9 +238,6 @@ public abstract class Tool
 		for (int i = 0; i < initAndNext.size(); i++) {
 			initAndNext.elementAt(i).setId(i);
 		}
-		
-		Stream.concat(initAndNext.stream(), Arrays.stream(getInvariants()))
-				.forEach(a -> getSpecProcessor().unsetCyclicDefinition(a.getOpDef()));
   }
 
   Tool(Tool other) {

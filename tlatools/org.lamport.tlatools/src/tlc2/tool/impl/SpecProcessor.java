@@ -823,7 +823,7 @@ public class SpecProcessor implements ValueConstants, ToolGlobals {
                 	}
                 	if (odn.isDefinedWith(rootOpDefs[i])) {
                 		// A cyclic redefinition RF is a formula that is defined from another formula
-                		// F while also re-defining F:
+                		// F, while also re-defining F:
                 		// 
                 		// F == /\ A
                 		//      /\ B
@@ -833,10 +833,26 @@ public class SpecProcessor implements ValueConstants, ToolGlobals {
                 		//       /\ D
                 		//
                 		// CONSTANT F <- RF
-                		cyclicRedefs.put(odn, rootOpDefs[i]);
+                		//
+                		// Note that non-cyclic definitions are handled lazily, i.e., F's
+                		// OpDefNode#tools references RF's OpDefNode, which the
+                		// SymbolNodeValueLookupProvider will look up during evaluation. Here, we
+                		// eagerly replace F's OpDefNode with RF's OpDefNode at all call-sites of F.
+                		//
+						// The call to substituteFor may or may not substitute. For example, if
+						// rootOpDefs[i] is an root definition such as Init & Next or Spec,
+						// substituteFor will be a no-op, because there are OpApplNodes referencing
+						// rootOpDefs[i].
+                		getRootModule().substituteFor(odn, rootOpDefs[i]);
+
+                		// Call rootOpDefs[i].setToolObject(toolId, myVal) here would cause a stack
+						// overflow when evaluating/applying RF: RF -> F -> RF -> ...
+                	} else {
+                    	rootOpDefs[i].setToolObject(toolId, myVal);
                 	}
+                } else {
+                	rootOpDefs[i].setToolObject(toolId, myVal);
                 }
-                rootOpDefs[i].setToolObject(toolId, myVal);
                 this.defns.put(lhs, myVal);
                 overriden.add(lhs.toString());
             }
@@ -1929,21 +1945,5 @@ public class SpecProcessor implements ValueConstants, ToolGlobals {
 
 	public java.util.List<ExprNode> getPostConditionSpecs() {
 		return this.specObj.getPostConditionSpecs();
-	}
-	
-	// The domain contains the definitions that redefine the definitions in the co-domain.
-	private final Map<SemanticNode, SemanticNode> cyclicRedefs = new HashMap<>();
-
-	public void unsetCyclicDefinition(final OpDefNode to) {
-		// Unsetting/Breaking the cyclic definition mapping from  from  to  to, that would
-		// otherwise cause a StackOverflow during model checking.
-		// Remove the mapping because TLC creates N Action instances for expressions such
-		// as \E n \in N : A(n), but we only want to unset it for one instance because of
-		// the assertion.
-		final SemanticNode from = cyclicRedefs.remove(to);
-		if (from != null) {
-			assert from.getToolObject(toolId) == to;
-			from.setToolObject(toolId, null);
-		}
 	}
 }
