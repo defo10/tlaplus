@@ -14,12 +14,15 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import tla2sany.semantic.OpApplNode;
 import tla2sany.semantic.OpDeclNode;
 import tla2sany.semantic.SemanticNode;
 import tla2sany.semantic.SymbolNode;
+import tlc2.TLC;
 import tlc2.TLCGlobals;
 import tlc2.util.Context;
 import tlc2.util.FP64;
+import tlc2.util.JsonStateWriter;
 import tlc2.value.IMVPerm;
 import tlc2.value.IValue;
 import tlc2.value.IValueInputStream;
@@ -120,6 +123,10 @@ public final class TLCStateMut extends TLCState implements Serializable {
   public final IValue lookup(UniqueString var) {
     int loc = var.getVarLoc();
     if (loc < 0) return null;
+    if (TLC.stateWriter instanceof JsonStateWriter) {
+        JsonStateWriter writer = (JsonStateWriter) TLC.stateWriter;
+        writer.varLookups.add(var.toString());
+    }
     return this.values[loc];
   }
 
