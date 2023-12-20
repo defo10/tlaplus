@@ -34,4 +34,8 @@ public class ExplorerVisitor {
 	
 	public void postVisit(final ExploreNode exploreNode) {
 	}
+
+	public boolean shouldVisitDescendants(ExploreNode exploreNode) {
+		return true;
+	}
 }

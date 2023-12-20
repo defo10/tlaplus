@@ -1169,31 +1169,33 @@ public class OpApplNode extends ExprNode implements ExploreNode {
     semNodesTable.put(uid, this);
     visitor.preVisit(this);
 
-    if (operator != null) {
+    if (operator != null && visitor.shouldVisitDescendants(operator)) {
       operator.walkGraph(semNodesTable, visitor);
     }
 
     if (unboundedBoundSymbols != null && unboundedBoundSymbols.length > 0) {
       for (int i = 0; i < unboundedBoundSymbols.length; i++)
-        if (unboundedBoundSymbols[i] != null)
+        if (unboundedBoundSymbols[i] != null && visitor.shouldVisitDescendants(unboundedBoundSymbols[i]))
            unboundedBoundSymbols[i].walkGraph(semNodesTable, visitor);
     }
 
     if (operands != null && operands.length > 0) {
       for (int i = 0; i < operands.length; i++)
-        if (operands[i] != null) operands[i].walkGraph(semNodesTable, visitor);
+        if (operands[i] != null  && visitor.shouldVisitDescendants(operands[i]))
+          operands[i].walkGraph(semNodesTable, visitor);
     }
 
     if (ranges.length > 0) {
       for (int i = 0; i < ranges.length; i++)
-        if (ranges[i] != null) ranges[i].walkGraph(semNodesTable, visitor);
+        if (ranges[i] != null && visitor.shouldVisitDescendants(ranges[i]))
+          ranges[i].walkGraph(semNodesTable, visitor);
     }
 
     if (boundedBoundSymbols != null && boundedBoundSymbols.length > 0) {
       for (int i = 0; i < boundedBoundSymbols.length; i++) {
         if (boundedBoundSymbols[i] != null && boundedBoundSymbols[i].length > 0) {
           for (int j = 0; j < boundedBoundSymbols[i].length; j++) {
-            if (boundedBoundSymbols[i][j] != null)
+            if (boundedBoundSymbols[i][j] != null && visitor.shouldVisitDescendants(boundedBoundSymbols[i][j]))
                boundedBoundSymbols[i][j].walkGraph(semNodesTable, visitor);
           }
         }
