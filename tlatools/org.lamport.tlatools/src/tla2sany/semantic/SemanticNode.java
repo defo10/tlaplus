@@ -4,11 +4,7 @@
 // last modified on Fri 16 Mar 2007 at 17:22:54 PST by lamport
 package tla2sany.semantic;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -508,6 +504,39 @@ public abstract class SemanticNode
         ee.printStackTrace();
         throw ee;
       }
+    }
+
+
+    public String toTreeString() {
+        StringBuilder buffer = new StringBuilder();
+        print(buffer, "", "");
+        return buffer.toString();
+    }
+
+    /** https://stackoverflow.com/questions/4965335/how-to-print-binary-tree-diagram-in-java
+     * */
+    private void print(StringBuilder buffer, String prefix, String childrenPrefix) {
+        buffer.append(prefix);
+
+        if (getClass() == OpApplNode.class) {
+            OpApplNode node = (OpApplNode) this;
+            buffer.append(node.operator.getName().toString());
+        } else {
+            String[] classParts = getClass().getName().split("\\.");
+            String className = classParts[classParts.length - 1];
+            buffer.append(className).append(":").append(stn.toString());
+        }
+
+        buffer.append('\n');
+
+        for (Iterator<SemanticNode> it = getListOfChildren().iterator(); it.hasNext();) {
+            SemanticNode next = it.next();
+            if (it.hasNext()) {
+                next.print(buffer, childrenPrefix + "├── ", childrenPrefix + "│   ");
+            } else {
+                next.print(buffer, childrenPrefix + "└── ", childrenPrefix + "    ");
+            }
+        }
     }
   
   	public static final SemanticNode nullSN = new NullSemanticNode();

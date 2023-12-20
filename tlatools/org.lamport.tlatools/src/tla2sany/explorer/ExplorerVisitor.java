@@ -25,6 +25,8 @@
  ******************************************************************************/
 package tla2sany.explorer;
 
+import tla2sany.semantic.OpApplNode;
+
 public class ExplorerVisitor {
 
 	public static final ExplorerVisitor NoopVisitor = new ExplorerVisitor();
