@@ -840,7 +840,7 @@ public class RecordValue extends Value implements FunctionValue {
 			}
 
 			@Override
-			public TLCState bind(UniqueString name, IValue value) {
+			public TLCState bind(UniqueString name, IValue value, boolean ignoreJsonWriter) {
 				return this.state.bind(name, value);
 			}
 
@@ -855,7 +855,7 @@ public class RecordValue extends Value implements FunctionValue {
 			}
 
 			@Override
-			public IValue lookup(UniqueString var) {
+			public IValue lookup(UniqueString var, boolean ignoreJsonWriter) {
 				if (this.state.containsKey(var)) {
 					return this.state.lookup(var);
 				}

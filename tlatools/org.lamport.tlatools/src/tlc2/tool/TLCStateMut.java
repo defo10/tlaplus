@@ -8,10 +8,7 @@ package tlc2.tool;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import tla2sany.semantic.OpApplNode;
@@ -22,6 +19,7 @@ import tlc2.TLC;
 import tlc2.TLCGlobals;
 import tlc2.util.Context;
 import tlc2.util.FP64;
+import tlc2.util.IdThread;
 import tlc2.util.JsonStateWriter;
 import tlc2.value.IMVPerm;
 import tlc2.value.IValue;
@@ -103,11 +101,21 @@ public final class TLCStateMut extends TLCState implements Serializable {
     return false;
   }
   
-  public final TLCState bind(UniqueString name, IValue value) {
+  public final TLCState bind(UniqueString name, IValue value, boolean ignoreJsonWriter) {
 	  // Note, tla2sany.semantic.OpApplNode.toString(Value) relies on this ordering.
     int loc = name.getVarLoc();
     this.values[loc] = value;
-    return this;
+
+    if (TLC.stateWriter instanceof JsonStateWriter && !ignoreJsonWriter) {
+        if (IdThread.getCurrentState() != null) {
+            if (IdThread.getCurrentState().varBinds == null) {
+                IdThread.getCurrentState().varBinds = new HashMap<>();
+            }
+            IdThread.getCurrentState().varBinds.put(name.toString(), value);
+        }
+    }
+
+      return this;
   }
 
   public final TLCState bind(SymbolNode id, IValue value) {
@@ -117,20 +125,33 @@ public final class TLCStateMut extends TLCState implements Serializable {
   public final TLCState unbind(UniqueString name) {
     int loc = name.getVarLoc();
     this.values[loc] = null;
+
+      if (TLC.stateWriter instanceof JsonStateWriter) {
+          if (IdThread.getCurrentState() != null) {
+              if (IdThread.getCurrentState().varBinds != null) {
+                  IdThread.getCurrentState().varBinds.remove(name.toString());
+              }
+          }
+      }
+
     return this;
   }
-
-  public final IValue lookup(UniqueString var) {
-    int loc = var.getVarLoc();
-    if (loc < 0) return null;
-    if (TLC.stateWriter instanceof JsonStateWriter) {
-        JsonStateWriter writer = (JsonStateWriter) TLC.stateWriter;
-        writer.varLookups.add(var.toString());
+    @Override
+    public IValue lookup(UniqueString var, boolean ignoreJsonWriter) {
+        int loc = var.getVarLoc();
+        if (loc < 0) return null;
+        if (!ignoreJsonWriter && TLC.stateWriter instanceof JsonStateWriter) {
+            if (IdThread.getCurrentState() != null) {
+                if (IdThread.getCurrentState().varLookups == null) {
+                    IdThread.getCurrentState().varLookups = new HashMap<>();
+                }
+                IdThread.getCurrentState().varLookups.put(var.toString(), this.values[loc]);
+            }
+        }
+        return this.values[loc];
     }
-    return this.values[loc];
-  }
 
-  public final boolean containsKey(UniqueString var) {
+    public final boolean containsKey(UniqueString var) {
     return (this.lookup(var) != null);
   }
 

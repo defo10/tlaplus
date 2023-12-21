@@ -70,8 +70,11 @@ public abstract class TLCState implements Serializable {
 		vos.writeShortNat((short) this.level);
 	}
 
-  public abstract TLCState bind(UniqueString name, IValue value);
-  public abstract TLCState bind(SymbolNode id, IValue value);  
+  public TLCState bind(UniqueString name, IValue value) {
+	  return bind(name, value, false);
+  }
+  public abstract TLCState bind(UniqueString name, IValue value, boolean ignoreJsonWriter);
+  public abstract TLCState bind(SymbolNode id, IValue value);
   public abstract TLCState unbind(UniqueString name);
   /**
    * Convenience method when performance doesn't matter.
@@ -79,7 +82,12 @@ public abstract class TLCState implements Serializable {
   public IValue lookup(String var) {
 	  return lookup(UniqueString.uniqueStringOf(var));
   }
-  public abstract IValue lookup(UniqueString var);
+
+  public IValue lookup(UniqueString var) {
+	  return this.lookup(var, false);
+  };
+
+  public abstract IValue lookup(UniqueString var, boolean ignoreJsonWriter);
   public abstract boolean containsKey(UniqueString var);
   public abstract TLCState copy();
   public abstract TLCState deepCopy();
@@ -272,5 +280,10 @@ public abstract class TLCState implements Serializable {
 
 		return PartialBoolean.YES;
 	}
+
+	public Map<String, IValue> fcnApplies = new HashMap<>();
+	public Map<String, IValue> varLookups = new HashMap<>();
+	public Map<String, IValue> varBinds = new HashMap<>();
+
 
 }

@@ -1492,8 +1492,6 @@ public abstract class Tool
         return this.getNextStates(action, acts, s0, s1, nss, cm);
     }
 
-    // TODO this place is evaluated at the beginning of a new state and first evaluates all variables declared as unchanged
-    // however, we are probably more interested when any variable is read
     @ExpectInlined
     private final TLCState processUnchangedImplVar(final Action action, SemanticNode expr, ActionItemList acts, TLCState s0, TLCState s1, INextStateFunctor nss,
                                                    SymbolNode var, final CostModel cm) {
@@ -1501,15 +1499,10 @@ public abstract class Tool
         // expr is a state variable:
         final UniqueString varName = var.getName();
 
-        if (TLC.stateWriter instanceof JsonStateWriter) {
-            JsonStateWriter writer = (JsonStateWriter) TLC.stateWriter;
-            writer.unchangedVars.add(varName.toString());
-        }
-
-        final IValue val0 = s0.lookup(varName);
-        final IValue val1 = s1.lookup(varName);
+        final IValue val0 = s0.lookup(varName, true);
+        final IValue val1 = s1.lookup(varName, true);
         if (val1 == null) {
-            resState.bind(varName, val0);
+            resState.bind(varName, val0, true);
             if (coverage) {
                 resState = this.getNextStates(action, acts, s0, resState, nss, cm);
             } else {
@@ -2176,9 +2169,14 @@ public abstract class Tool
                     Value argVal = this.eval(args[1], c, s0, s1, control, cm);
                     result = fcn.apply(argVal, control);
                     if (TLC.stateWriter instanceof JsonStateWriter) {
-                        JsonStateWriter writer = (JsonStateWriter) TLC.stateWriter;
                         OpApplNode n = (OpApplNode) args[0];
-                        writer.trackFcnApply(n.getOperator().getName().toString(), argVal);
+
+                        if (IdThread.getCurrentState() != null) {
+                            if (IdThread.getCurrentState().fcnApplies == null) {
+                                IdThread.getCurrentState().fcnApplies = new HashMap<>();
+                            }
+                            IdThread.getCurrentState().fcnApplies.put(n.getOperator().getName().toString(), argVal);
+                        }
                     }
                 } else if ((fval instanceof TupleValue) ||
                         (fval instanceof RecordValue)) {

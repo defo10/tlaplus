@@ -40,7 +40,7 @@ public final class TLCStateFun extends TLCState {
 
   public final TLCState createEmpty() { return Empty; }
 
-  public final TLCState bind(UniqueString name, IValue value) {
+  public final TLCState bind(UniqueString name, IValue value, boolean ignoreJsonWriter) {
       throw new WrongInvocationException("TLCStateFun.bind: This is a TLC bug.");
   }
 
@@ -52,7 +52,7 @@ public final class TLCStateFun extends TLCState {
       throw new WrongInvocationException("TLCStateFun.unbind: This is a TLC bug.");
   }
   
-  public final IValue lookup(UniqueString var) {
+  public final IValue lookup(UniqueString var, boolean ignoreJsonWriter) {
     for (TLCStateFun cur = this; cur != Empty; cur = cur.next) {
       if (var == cur.name.getName()) return cur.value;
     }

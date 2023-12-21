@@ -28,7 +28,7 @@ public class DummyTLCState extends TLCState {
 	/* (non-Javadoc)
 	 * @see tlc2.tool.TLCState#bind(util.UniqueString, tlc2.value.Value, tla2sany.semantic.SemanticNode)
 	 */
-	public TLCState bind(UniqueString name, IValue value) {
+	public TLCState bind(UniqueString name, IValue value, boolean ignoreJsonStateWriter) {
 		return null;
 	}
 
@@ -49,7 +49,7 @@ public class DummyTLCState extends TLCState {
 	/* (non-Javadoc)
 	 * @see tlc2.tool.TLCState#lookup(util.UniqueString)
 	 */
-	public IValue lookup(UniqueString var) {
+	public IValue lookup(UniqueString var, boolean ignoreJsonWriter) {
 		return null;
 	}
 

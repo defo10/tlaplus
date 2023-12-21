@@ -100,7 +100,7 @@ public final class TLCStateMutExt extends TLCState implements Serializable {
     return false;
   }
   
-  public final TLCState bind(UniqueString name, IValue value) {
+  public final TLCState bind(UniqueString name, IValue value, boolean ignoreJsonWriter) {
 	  // Note, tla2sany.semantic.OpApplNode.toString(Value) relies on this ordering.
     int loc = name.getVarLoc();
     this.values[loc] = value;
@@ -117,7 +117,7 @@ public final class TLCStateMutExt extends TLCState implements Serializable {
     return this;
   }
 
-  public final IValue lookup(UniqueString var) {
+  public final IValue lookup(UniqueString var, boolean ignoreJsonWriter) {
     int loc = var.getVarLoc();
     if (loc < 0) return null;
     return this.values[loc];
