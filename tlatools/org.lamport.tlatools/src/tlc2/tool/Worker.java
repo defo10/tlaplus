@@ -112,6 +112,7 @@ public final class Worker extends IdThread implements IWorker, INextStateFunctor
 				
 				final long preNext = this.statesGenerated;
 				try {
+					// TODO set and unset eval flag here?
 					this.tool.getNextStates(this, curState);
 				} catch (final WrappingRuntimeException e) {
 					// The next-state relation couldn't be evaluated. If doNextFailed itself throws
@@ -425,13 +426,20 @@ public final class Worker extends IdThread implements IWorker, INextStateFunctor
 				// be defined.
 				throw new InvariantViolatedException();
 			}
-			
+
+			if (IdThread.getCurrentState() != null) {
+				IdThread.getCurrentState().isExcludedByConstraint = true;
+			}
 			// Check if state is excluded by a state or action constraint.
 			// Set the predecessor to make TLC!TLCGet("level") work in
 			// state constraints, i.e. isInModel.
 			final boolean inModel = (this.tool.isInModel(succState.setPredecessor(curState).setAction(action))
 					&& this.tool.isInActions(curState, succState));
-			
+
+			if (IdThread.getCurrentState() != null) {
+				IdThread.getCurrentState().isExcludedByConstraint = false;
+			}
+
 			// Check if state is new or has been seen earlier.
 			boolean unseen = true;
 			if (inModel) {
