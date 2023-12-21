@@ -855,7 +855,7 @@ public class RecordValue extends Value implements FunctionValue {
 			}
 
 			@Override
-			public IValue lookup(UniqueString var, boolean ignoreJsonWriter) {
+			public IValue lookup(UniqueString var) {
 				if (this.state.containsKey(var)) {
 					return this.state.lookup(var);
 				}

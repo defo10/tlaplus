@@ -37,6 +37,7 @@ import tlc2.tool.TLCState;
 import tlc2.tool.coverage.CostModel;
 import tlc2.util.Context;
 import tlc2.util.ExpectInlined;
+import tlc2.util.IdThread;
 import tlc2.value.impl.Value;
 import util.FilenameToStream;
 
@@ -100,7 +101,17 @@ public final class FastTool extends Tool {
 	@Override
 	protected final TLCState processUnchanged(final Action action, final SemanticNode expr, final ActionItemList acts,
 			final Context c, final TLCState s0, final TLCState s1, final INextStateFunctor nss, final CostModel cm) {
-		return processUnchangedImpl(action, expr, acts, c, s0, s1, nss, cm);
+		if (IdThread.getCurrentState() != null) {
+			IdThread.getCurrentState().isInUnchangedNode = true;
+		}
+
+		TLCState s = processUnchangedImpl(action, expr, acts, c, s0, s1, nss, cm);
+
+		if (IdThread.getCurrentState() != null) {
+			IdThread.getCurrentState().isInUnchangedNode = false;
+		}
+
+		return s;
 	}
 
 	@ExpectInlined

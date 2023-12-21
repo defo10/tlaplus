@@ -52,7 +52,7 @@ public final class TLCStateFun extends TLCState {
       throw new WrongInvocationException("TLCStateFun.unbind: This is a TLC bug.");
   }
   
-  public final IValue lookup(UniqueString var, boolean ignoreJsonWriter) {
+  public final IValue lookup(UniqueString var) {
     for (TLCStateFun cur = this; cur != Empty; cur = cur.next) {
       if (var == cur.name.getName()) return cur.value;
     }

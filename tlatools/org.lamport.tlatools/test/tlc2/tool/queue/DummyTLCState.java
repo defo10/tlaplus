@@ -49,7 +49,7 @@ public class DummyTLCState extends TLCState {
 	/* (non-Javadoc)
 	 * @see tlc2.tool.TLCState#lookup(util.UniqueString)
 	 */
-	public IValue lookup(UniqueString var, boolean ignoreJsonWriter) {
+	public IValue lookup(UniqueString var) {
 		return null;
 	}
 

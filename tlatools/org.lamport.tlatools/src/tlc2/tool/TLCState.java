@@ -83,11 +83,7 @@ public abstract class TLCState implements Serializable {
 	  return lookup(UniqueString.uniqueStringOf(var));
   }
 
-  public IValue lookup(UniqueString var) {
-	  return this.lookup(var, false);
-  };
-
-  public abstract IValue lookup(UniqueString var, boolean ignoreJsonWriter);
+  public abstract IValue lookup(UniqueString var);
   public abstract boolean containsKey(UniqueString var);
   public abstract TLCState copy();
   public abstract TLCState deepCopy();
@@ -286,5 +282,7 @@ public abstract class TLCState implements Serializable {
 	public Map<String, IValue> varBinds = new HashMap<>();
 
 	public boolean isExcludedByConstraint = false;
+
+	public boolean isInUnchangedNode = false;
 
 }

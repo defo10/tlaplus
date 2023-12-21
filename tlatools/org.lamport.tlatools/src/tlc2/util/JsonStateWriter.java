@@ -122,6 +122,11 @@ public class JsonStateWriter extends StateWriter {
                 throw new RuntimeException(e);
             }
         }
+
+        if (IdThread.getCurrentState() == null) return;
+        IdThread.getCurrentState().fcnApplies.clear();
+        IdThread.getCurrentState().varLookups.clear();
+        IdThread.getCurrentState().varBinds.clear();
     }
 
     protected void maintainRanks(final TLCState state) {

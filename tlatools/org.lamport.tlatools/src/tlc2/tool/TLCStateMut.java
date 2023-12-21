@@ -137,11 +137,11 @@ public final class TLCStateMut extends TLCState implements Serializable {
     return this;
   }
     @Override
-    public IValue lookup(UniqueString var, boolean ignoreJsonWriter) {
+    public IValue lookup(UniqueString var) {
         int loc = var.getVarLoc();
         if (loc < 0) return null;
-        if (!ignoreJsonWriter && TLC.stateWriter instanceof JsonStateWriter) {
-            if (IdThread.getCurrentState() != null && !IdThread.getCurrentState().isExcludedByConstraint) {
+        if (TLC.stateWriter instanceof JsonStateWriter) {
+            if (IdThread.getCurrentState() != null && !IdThread.getCurrentState().isExcludedByConstraint && !IdThread.getCurrentState().isInUnchangedNode) {
                 if (IdThread.getCurrentState().varLookups == null) {
                     IdThread.getCurrentState().varLookups = new HashMap<>();
                 }

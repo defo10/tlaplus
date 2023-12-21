@@ -117,7 +117,7 @@ public final class TLCStateMutExt extends TLCState implements Serializable {
     return this;
   }
 
-  public final IValue lookup(UniqueString var, boolean ignoreJsonWriter) {
+  public final IValue lookup(UniqueString var) {
     int loc = var.getVarLoc();
     if (loc < 0) return null;
     return this.values[loc];

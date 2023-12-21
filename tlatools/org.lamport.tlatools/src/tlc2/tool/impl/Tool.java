@@ -1499,8 +1499,8 @@ public abstract class Tool
         // expr is a state variable:
         final UniqueString varName = var.getName();
 
-        final IValue val0 = s0.lookup(varName, true);
-        final IValue val1 = s1.lookup(varName, true);
+        final IValue val0 = s0.lookup(varName);
+        final IValue val1 = s1.lookup(varName);
         if (val1 == null) {
             resState.bind(varName, val0, true);
             if (coverage) {
@@ -1518,6 +1518,7 @@ public abstract class Tool
         } else {
             MP.printWarning(EC.TLC_UNCHANGED_VARIABLE_CHANGED, new String[]{varName.toString(), expr.toString()});
         }
+
         return resState;
     }
 
