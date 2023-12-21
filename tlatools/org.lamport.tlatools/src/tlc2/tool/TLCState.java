@@ -285,5 +285,6 @@ public abstract class TLCState implements Serializable {
 	public Map<String, IValue> varLookups = new HashMap<>();
 	public Map<String, IValue> varBinds = new HashMap<>();
 
+	public boolean isExcludedByConstraint = false;
 
 }

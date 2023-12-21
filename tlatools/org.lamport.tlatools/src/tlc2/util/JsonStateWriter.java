@@ -122,8 +122,6 @@ public class JsonStateWriter extends StateWriter {
                 throw new RuntimeException(e);
             }
         }
-
-        return;
     }
 
     protected void maintainRanks(final TLCState state) {
@@ -253,6 +251,9 @@ public class JsonStateWriter extends StateWriter {
             }
         }
 
+        IdThread.getCurrentState().fcnApplies.clear();
+        IdThread.getCurrentState().varLookups.clear();
+        IdThread.getCurrentState().varBinds.clear();
     }
 
     private String varsMapToJson(Map<String, IValue> map) {

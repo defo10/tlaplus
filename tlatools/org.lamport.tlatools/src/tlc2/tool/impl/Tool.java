@@ -2171,7 +2171,7 @@ public abstract class Tool
                     if (TLC.stateWriter instanceof JsonStateWriter) {
                         OpApplNode n = (OpApplNode) args[0];
 
-                        if (IdThread.getCurrentState() != null) {
+                        if (IdThread.getCurrentState() != null && !IdThread.getCurrentState().isExcludedByConstraint) {
                             if (IdThread.getCurrentState().fcnApplies == null) {
                                 IdThread.getCurrentState().fcnApplies = new HashMap<>();
                             }
