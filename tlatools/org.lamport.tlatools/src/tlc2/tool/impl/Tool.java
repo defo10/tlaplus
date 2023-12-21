@@ -53,6 +53,7 @@ import tlc2.tool.TLCStateMut;
 import tlc2.tool.TLCStateMutExt;
 import tlc2.tool.ToolGlobals;
 import tlc2.tool.coverage.CostModel;
+import tlc2.tool.export.VarNode;
 import tlc2.util.*;
 import tlc2.value.IFcnLambdaValue;
 import tlc2.value.IMVPerm;
@@ -2135,6 +2136,9 @@ public abstract class Tool
             }
             case OPCODE_exc:    // Except
             {
+                if (IdThread.getCurrentState() != null) {
+                    IdThread.getCurrentState().actorContext = TLCState.ActorContext.Writing;
+                }
                 int alen = args.length;
                 Value result = this.eval(args[0], c, s0, s1, control, cm);
                 // SZ: variable not used ValueExcept[] expts = new ValueExcept[alen-1];
@@ -2158,6 +2162,9 @@ public abstract class Tool
                         result = (Value) result.takeExcept(vex);
                     }
                 }
+                if (IdThread.getCurrentState() != null) {
+                    IdThread.getCurrentState().actorContext = null;
+                }
                 return result;
             }
             case OPCODE_fa:     // FcnApply
@@ -2171,6 +2178,20 @@ public abstract class Tool
                     result = fcn.apply(argVal, control);
                     if (TLC.stateWriter instanceof JsonStateWriter) {
                         OpApplNode n = (OpApplNode) args[0];
+                        String fnName = n.getOperator().getName().toString();
+
+                        if (IdThread.getCurrentState() != null) {
+                            if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.Writing) {
+                                VarNode<IValue, String> writes = IdThread.getCurrentState().writes;
+                                VarNode<IValue, String> fn = writes.addChild(fcn, fnName);
+                                fn.addChild(result, argVal.toString());
+                            }
+                            if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.Reading) {
+                                VarNode<IValue, String> reads = IdThread.getCurrentState().reads;
+                                VarNode<IValue, String> fn = reads.addChild(fcn, fnName);
+                                fn.addChild(result, argVal.toString());
+                            }
+                        }
 
                         if (IdThread.getCurrentState() != null && !IdThread.getCurrentState().isExcludedByConstraint) {
                             if (IdThread.getCurrentState().fcnApplies == null) {
@@ -3100,6 +3121,7 @@ public abstract class Tool
                         return null;
                     }
                 } else {
+                    // TODO all primed assignment must go through here?
                     UniqueString varName = var.getName();
                     IValue lval = s1.lookup(varName);
                     Value rval = this.eval(args[1], c, s0, s1, EvalControl.Enabled, cm);
@@ -3165,7 +3187,7 @@ public abstract class Tool
                     }
                 } else {
                     UniqueString varName = var.getName();
-                    Value lval = (Value) s1.lookup(varName);
+                    Value lval = (Value) s1.lookup(varName); // TODO does lookup also contain let defined names?
                     Value rval = this.eval(args[1], c, s0, s1, EvalControl.Enabled, cm);
                     if (lval == null) {
                         if (!(rval instanceof Enumerable)) {

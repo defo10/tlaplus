@@ -17,10 +17,12 @@ import java.util.concurrent.Callable;
 import tla2sany.semantic.OpDeclNode;
 import tla2sany.semantic.SymbolNode;
 import tlc2.output.EC;
+import tlc2.tool.export.VarNode;
 import tlc2.util.PartialBoolean;
 import tlc2.value.IValue;
 import tlc2.value.IValueInputStream;
 import tlc2.value.IValueOutputStream;
+import tlc2.value.impl.FunctionValue;
 import tlc2.value.impl.Value;
 import util.Assert;
 import util.UniqueString;
@@ -284,5 +286,14 @@ public abstract class TLCState implements Serializable {
 	public boolean isExcludedByConstraint = false;
 
 	public boolean isInUnchangedNode = false;
+
+	public VarNode<IValue, String> reads = new VarNode<>(null, "variables");
+	public VarNode<IValue, String> writes = new VarNode<>(null, "variables");
+
+	public ActorContext actorContext;
+	public enum ActorContext {
+		Writing,
+		Reading
+	}
 
 }
