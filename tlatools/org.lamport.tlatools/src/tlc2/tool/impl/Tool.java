@@ -830,6 +830,11 @@ public abstract class Tool
     @Override
     public boolean getNextStates(final INextStateFunctor functor, final TLCState state) {
         for (int i = 0; i < actions.length; i++) {
+            // When we try out all possible actions following from state,
+            // we need to reset the read/write context before each try.
+            if (IdThread.getCurrentState() != null) {
+                IdThread.getCurrentState().clearReadsAndWrites();
+            }
             this.getNextStates(functor, state, actions[i]);
         }
         return false;
