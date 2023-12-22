@@ -175,9 +175,11 @@ public class JsonStateWriter extends StateWriter {
         System.out.println("++++++++++++++++++");
         System.out.println(label);
         System.out.println("READS:");
-        System.out.println(IdThread.getCurrentState().reads.toString());
+        String readsKeyValueJson = IdThread.getCurrentState().reads.toString();
+        System.out.println(readsKeyValueJson);
         System.out.println("WRITES:");
-        System.out.println(IdThread.getCurrentState().writes.toString());
+        String writesKeyValueJson = IdThread.getCurrentState().writes.toString();
+        System.out.println(writesKeyValueJson);
         System.out.println("++++++++++++++++++");
 
         StringBuilder jsonBuilder = new StringBuilder("{");
@@ -185,13 +187,8 @@ public class JsonStateWriter extends StateWriter {
         jsonBuilder.append("\"to\":\"").append(toNode).append("\",");
         jsonBuilder.append("\"label\":\"").append(label).append("\",");
         jsonBuilder.append("\"$type\": \"edge").append("\",");
-
-        jsonBuilder.append("\"reads\":")
-                .append("readVars")
-                .append(",");
-
-        jsonBuilder.append("\"writes\":")
-                .append(varsMapToJson(writtenVars));
+        jsonBuilder.append(readsKeyValueJson).append(",");
+        jsonBuilder.append(writesKeyValueJson);
 
         jsonBuilder.append("}");
 

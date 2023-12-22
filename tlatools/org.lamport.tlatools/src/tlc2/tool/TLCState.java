@@ -279,12 +279,12 @@ public abstract class TLCState implements Serializable {
 		return PartialBoolean.YES;
 	}
 
-	public VarNode<String, IValue> reads = new VarNode<>("variables", null);
-	public VarNode<String, IValue> writes = new VarNode<>("variables", null);
+	public VarNode<String, IValue> reads = new VarNode<>("reads", null);
+	public VarNode<String, IValue> writes = new VarNode<>("writes", null);
 
 	public void clearReadsAndWrites() {
-		reads = new VarNode<>("variables", null);
-		writes = new VarNode<>("variables", null);
+		reads = new VarNode<>("reads", null);
+		writes = new VarNode<>("writes", null);
 	}
 
 	public ActorContext actorContext;
