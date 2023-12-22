@@ -72,10 +72,7 @@ public abstract class TLCState implements Serializable {
 		vos.writeShortNat((short) this.level);
 	}
 
-  public TLCState bind(UniqueString name, IValue value) {
-	  return bind(name, value, false);
-  }
-  public abstract TLCState bind(UniqueString name, IValue value, boolean ignoreJsonWriter);
+  public abstract TLCState bind(UniqueString name, IValue value);
   public abstract TLCState bind(SymbolNode id, IValue value);
   public abstract TLCState unbind(UniqueString name);
   /**

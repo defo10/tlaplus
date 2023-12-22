@@ -141,7 +141,7 @@ public class TLC {
 	 * <p>
 	 * Off (NoopStateWriter) by default.
 	 */
-    public static IStateWriter stateWriter = new NoopStateWriter();
+    private IStateWriter stateWriter = new NoopStateWriter();
 
     /**
      * Name of checkpoint from which TLC should recover.

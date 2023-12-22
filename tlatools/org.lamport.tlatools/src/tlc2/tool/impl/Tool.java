@@ -1538,7 +1538,7 @@ public abstract class Tool
         final IValue val0 = s0.lookup(varName);
         final IValue val1 = s1.lookup(varName);
         if (val1 == null) {
-            resState.bind(varName, val0, true);
+            resState.bind(varName, val0);
             if (coverage) {
                 resState = this.getNextStates(action, acts, s0, resState, nss, cm);
             } else {
@@ -2242,21 +2242,19 @@ public abstract class Tool
                     FunctionValue fcn = (FunctionValue) fval;
                     Value argVal = this.eval(args[1], c, s0, s1, control, cm);
                     result = fcn.apply(argVal, control);
-                    if (TLC.stateWriter instanceof JsonStateWriter) {
-                        OpApplNode n = (OpApplNode) args[0];
-                        String fnName = n.getOperator().getName().toString();
 
-                        if (IdThread.getCurrentState() != null) {
-                            if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.Writing) {
-                                VarNode<String, IValue> writes = IdThread.getCurrentState().writes;
-                                VarNode<String, IValue> fn = writes.addChildIfAbsent(fnName, fcn);
-                                fn.addChildIfAbsent(argVal.toString(), result);
-                            }
-                            if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.Reading) {
-                                VarNode<String, IValue> reads = IdThread.getCurrentState().reads;
-                                VarNode<String, IValue> fn = reads.addChildIfAbsent(fnName, fcn);
-                                fn.addChildIfAbsent(argVal.toString(), result);
-                            }
+                    OpApplNode n = (OpApplNode) args[0];
+                    String fnName = n.getOperator().getName().toString();
+                    if (IdThread.getCurrentState() != null) {
+                        if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.Writing) {
+                            VarNode<String, IValue> writes = IdThread.getCurrentState().writes;
+                            VarNode<String, IValue> fn = writes.addChildIfAbsent(fnName, fcn);
+                            fn.addChildIfAbsent(argVal.toString(), result);
+                        }
+                        if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.Reading) {
+                            VarNode<String, IValue> reads = IdThread.getCurrentState().reads;
+                            VarNode<String, IValue> fn = reads.addChildIfAbsent(fnName, fcn);
+                            fn.addChildIfAbsent(argVal.toString(), result);
                         }
                     }
                 } else if ((fval instanceof TupleValue) ||

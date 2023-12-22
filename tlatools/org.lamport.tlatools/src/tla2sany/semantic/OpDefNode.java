@@ -1289,13 +1289,13 @@ public class OpDefNode extends OpDefOrDeclNode
     visitor.preVisit(this);
     if (params != null && params.length > 0) {
       for (int i = 0; i < params.length; i++) {
-        if (params[i] != null && visitor.shouldVisitDescendants(params[i]))
+        if (params[i] != null)
             params[i].walkGraph(semNodesTable, visitor);
       }
     }
-    if (body != null && visitor.shouldVisitDescendants(body))
+    if (body != null)
         body.walkGraph(semNodesTable, visitor);
-    if (stepNode != null && visitor.shouldVisitDescendants(stepNode))
+    if (stepNode != null)
         stepNode.walkGraph(semNodesTable, visitor);
     visitor.postVisit(this);
   }

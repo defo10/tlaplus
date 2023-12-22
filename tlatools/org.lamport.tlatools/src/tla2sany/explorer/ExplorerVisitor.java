@@ -25,7 +25,6 @@
  ******************************************************************************/
 package tla2sany.explorer;
 
-import tla2sany.semantic.OpApplNode;
 
 public class ExplorerVisitor {
 
@@ -35,9 +34,5 @@ public class ExplorerVisitor {
 	}
 	
 	public void postVisit(final ExploreNode exploreNode) {
-	}
-
-	public boolean shouldVisitDescendants(ExploreNode exploreNode) {
-		return true;
 	}
 }

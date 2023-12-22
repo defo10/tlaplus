@@ -840,7 +840,7 @@ public class RecordValue extends Value implements FunctionValue {
 			}
 
 			@Override
-			public TLCState bind(UniqueString name, IValue value, boolean ignoreJsonWriter) {
+			public TLCState bind(UniqueString name, IValue value) {
 				return this.state.bind(name, value);
 			}
 

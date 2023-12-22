@@ -40,7 +40,7 @@ public final class TLCStateFun extends TLCState {
 
   public final TLCState createEmpty() { return Empty; }
 
-  public final TLCState bind(UniqueString name, IValue value, boolean ignoreJsonWriter) {
+  public final TLCState bind(UniqueString name, IValue value) {
       throw new WrongInvocationException("TLCStateFun.bind: This is a TLC bug.");
   }
 
