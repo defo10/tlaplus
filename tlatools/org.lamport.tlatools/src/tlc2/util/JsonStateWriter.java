@@ -195,10 +195,6 @@ public class JsonStateWriter extends StateWriter {
 
         jsonBuilder.append("}");
 
-        if (label.equals("CacheStartReadThroughFill")) {
-            System.out.println("j");
-        }
-
         this.writer.append(",\n").append(jsonBuilder);
 
         //String tree = action.getOpDef().toTreeString();

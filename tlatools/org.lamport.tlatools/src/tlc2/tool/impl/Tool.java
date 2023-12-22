@@ -1306,10 +1306,15 @@ public abstract class Tool
                 SymbolNode var = this.getPrimedVar(args[0], c, false);
                 // Assert.check(var.getName().getVarLoc() >= 0);
                 if (var == null) {
+
+                    IdThread.setReadingActorContext();
+
                     Value bval = this.eval(pred, c, s0, s1, EvalControl.Clear, cm);
                     if (!((BoolValue) bval).val) {
                         return resState;
                     }
+
+                    IdThread.unsetActorContext();
                 } else {
                     UniqueString varName = var.getName();
                     Value lval = (Value) s1.lookup(varName);
@@ -3226,7 +3231,7 @@ public abstract class Tool
                     }
                 } else {
                     UniqueString varName = var.getName();
-                    Value lval = (Value) s1.lookup(varName); // TODO does lookup also contain let defined names?
+                    Value lval = (Value) s1.lookup(varName);
                     Value rval = this.eval(args[1], c, s0, s1, EvalControl.Enabled, cm);
                     if (lval == null) {
                         if (!(rval instanceof Enumerable)) {
