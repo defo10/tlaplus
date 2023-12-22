@@ -1259,44 +1259,29 @@ public abstract class Tool
                 // Assert.check(var.getName().getVarLoc() >= 0);
                 if (var == null) {
                     // not a primed variable on the left side -> must be an equality check, i.e. only reads
-                    if (IdThread.getCurrentState() != null) {
-                        IdThread.getCurrentState().actorContext = TLCState.ActorContext.Reading;
-                    }
+                    IdThread.setReadingActorContext();
                     Value bval = this.eval(pred, c, s0, s1, EvalControl.Clear, cm);
 
-                    if (IdThread.getCurrentState() != null) {
-                        IdThread.getCurrentState().actorContext = null;
-                    }
+                    IdThread.unsetActorContext();
 
                     if (!((BoolValue) bval).val) {
                         return resState;
                     }
                 } else {
+                    // primed variable on the left side -> must write new variable
+                    IdThread.setWritingActorContext();
 
-                    if (IdThread.getCurrentState() != null) {
-                        IdThread.getCurrentState().actorContext = TLCState.ActorContext.Writing;
-                    }
-
-                    // TODO all primed assignment must go through here?
                     UniqueString varName = var.getName();
                     IValue lval = s1.lookup(varName);
                     Value rval = this.eval(args[1], c, s0, s1, EvalControl.Clear, cm);
+
+                    IdThread.unsetActorContext();
                     if (lval == null) {
                         resState.bind(varName, rval);
                         resState = this.getNextStates(action, acts, s0, resState, nss, cm);
                         resState.unbind(varName);
-
-                        if (IdThread.getCurrentState() != null) {
-                            IdThread.getCurrentState().actorContext = null;
-                        }
-
                         return resState;
                     } else if (!lval.equals(rval)) {
-
-                        if (IdThread.getCurrentState() != null) {
-                            IdThread.getCurrentState().actorContext = null;
-                        }
-
                         return resState;
                     }
                 }
@@ -1912,7 +1897,7 @@ public abstract class Tool
                     res = ((OpValue) val).eval(this, args, c, s0, s1, control, cm);
                 } else {
 
-                    // this is where variable values are read without any nesting?
+                    // this is where variable values are read eventually
                     if (IdThread.getCurrentState() != null && IdThread.getCurrentState().containsKey(opNode.getName())) {
                         TLCState state = IdThread.getCurrentState();
                         if (state.actorContext == TLCState.ActorContext.Reading) {
@@ -2180,9 +2165,7 @@ public abstract class Tool
             }
             case OPCODE_exc:    // Except
             {
-                if (IdThread.getCurrentState() != null) {
-                    IdThread.getCurrentState().actorContext = TLCState.ActorContext.Writing;
-                }
+                IdThread.setWritingActorContext();
                 int alen = args.length;
                 Value result = this.eval(args[0], c, s0, s1, control, cm);
                 // SZ: variable not used ValueExcept[] expts = new ValueExcept[alen-1];
@@ -2195,6 +2178,22 @@ public abstract class Tool
                     for (int j = 0; j < lhs.length; j++) {
                         lhs[j] = this.eval(cmpts[j], c, s0, s1, control, coverage ? cm.get(pairNode).get(pairArgs[0]) : cm);
                     }
+
+                    if (IdThread.getCurrentState() != null) {
+                        VarNode<String, IValue> node = IdThread.getCurrentState().writes;
+
+                        // we add the variable on which we apply the EXCEPT as first node
+                        String varName = ((OpApplNode)args[0]).getOperator().getName().toString();
+                        node = node.addChildIfAbsent(varName, result);
+
+                        for (Value v : lhs) {
+                            // value could be a string for record types, which we don't want to track
+                            if (v instanceof ModelValue) {
+                                node = node.addChildIfAbsent(v.toUnquotedString(), v);
+                            }
+                        }
+                    }
+
                     Value atVal = result.select(lhs);
                     if (atVal == null) {
                         // Do nothing but warn:
@@ -2203,9 +2202,7 @@ public abstract class Tool
                         // within an except, we possibly read variables again, e.g.
                         // [db EXCEPT ![k] = database[k] + 1]
                         // where this branch contains the inner database[k], which is a read
-                        if (IdThread.getCurrentState() != null) {
-                            IdThread.getCurrentState().actorContext = TLCState.ActorContext.Reading;
-                        }
+                        IdThread.setReadingActorContext();
 
                         Context c1 = c.cons(EXCEPT_AT, atVal);
                         Value rhs = this.eval(pairArgs[1], c1, s0, s1, control, coverage ? cm.get(pairNode) : cm);
@@ -2213,9 +2210,7 @@ public abstract class Tool
                         result = (Value) result.takeExcept(vex);
                     }
                 }
-                if (IdThread.getCurrentState() != null) {
-                    IdThread.getCurrentState().actorContext = null;
-                }
+                IdThread.unsetActorContext();
                 return result;
             }
             case OPCODE_fa:     // FcnApply
