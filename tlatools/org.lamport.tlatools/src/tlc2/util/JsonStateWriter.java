@@ -124,9 +124,6 @@ public class JsonStateWriter extends StateWriter {
         }
 
         if (IdThread.getCurrentState() == null) return;
-        IdThread.getCurrentState().fcnApplies.clear();
-        IdThread.getCurrentState().varLookups.clear();
-        IdThread.getCurrentState().varBinds.clear();
     }
 
     protected void maintainRanks(final TLCState state) {
@@ -168,15 +165,6 @@ public class JsonStateWriter extends StateWriter {
             return;
         }
 
-        // TODO for some reasons beyond my current understanding, directly removing from this.varLookups
-        // does not seem to work
-        // apparently the data is only wrong in the debugger, while correct when printing
-        // i assume
-        Map<String, IValue> readVars = IdThread.getCurrentState().varLookups;
-        /*
-        for (String read : reads) {
-            readVars.put(read, fcnApplies.getOrDefault(read, null));
-        }*/
 
         Map<String, IValue> writtenVars = new HashMap<>();
 
@@ -186,12 +174,10 @@ public class JsonStateWriter extends StateWriter {
 
         System.out.println("++++++++++++++++++");
         System.out.println(label);
-        System.out.println("Read Vars");
-        System.out.println(varsMapToJson(IdThread.getCurrentState().varLookups));
-        System.out.println("Bound Vars");
-        System.out.println(varsMapToJson(IdThread.getCurrentState().varBinds));
-        System.out.println("Fcn Applies Vars");
-        System.out.println(varsMapToJson(IdThread.getCurrentState().fcnApplies));
+        System.out.println("READS:");
+        System.out.println(IdThread.getCurrentState().reads.toString());
+        System.out.println("WRITES:");
+        System.out.println(IdThread.getCurrentState().writes.toString());
         System.out.println("++++++++++++++++++");
 
         StringBuilder jsonBuilder = new StringBuilder("{");
@@ -201,7 +187,7 @@ public class JsonStateWriter extends StateWriter {
         jsonBuilder.append("\"$type\": \"edge").append("\",");
 
         jsonBuilder.append("\"reads\":")
-                .append(varsMapToJson(readVars))
+                .append("readVars")
                 .append(",");
 
         jsonBuilder.append("\"writes\":")
@@ -256,9 +242,7 @@ public class JsonStateWriter extends StateWriter {
             }
         }
 
-        IdThread.getCurrentState().fcnApplies.clear();
-        IdThread.getCurrentState().varLookups.clear();
-        IdThread.getCurrentState().varBinds.clear();
+        IdThread.getCurrentState().clearReadsAndWrites();
     }
 
     private String varsMapToJson(Map<String, IValue> map) {

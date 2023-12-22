@@ -2192,13 +2192,6 @@ public abstract class Tool
                                 fn.addChild(result, argVal.toString());
                             }
                         }
-
-                        if (IdThread.getCurrentState() != null && !IdThread.getCurrentState().isExcludedByConstraint) {
-                            if (IdThread.getCurrentState().fcnApplies == null) {
-                                IdThread.getCurrentState().fcnApplies = new HashMap<>();
-                            }
-                            IdThread.getCurrentState().fcnApplies.put(n.getOperator().getName().toString(), argVal);
-                        }
                     }
                 } else if ((fval instanceof TupleValue) ||
                         (fval instanceof RecordValue)) {

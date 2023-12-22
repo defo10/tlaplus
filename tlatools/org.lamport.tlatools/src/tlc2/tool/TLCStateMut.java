@@ -106,15 +106,6 @@ public final class TLCStateMut extends TLCState implements Serializable {
     int loc = name.getVarLoc();
     this.values[loc] = value;
 
-    if (TLC.stateWriter instanceof JsonStateWriter && !ignoreJsonWriter) {
-        if (IdThread.getCurrentState() != null) {
-            if (IdThread.getCurrentState().varBinds == null && !IdThread.getCurrentState().isExcludedByConstraint) {
-                IdThread.getCurrentState().varBinds = new HashMap<>();
-            }
-            IdThread.getCurrentState().varBinds.put(name.toString(), value);
-        }
-    }
-
       return this;
   }
 
@@ -126,28 +117,12 @@ public final class TLCStateMut extends TLCState implements Serializable {
     int loc = name.getVarLoc();
     this.values[loc] = null;
 
-      if (TLC.stateWriter instanceof JsonStateWriter) {
-          if (IdThread.getCurrentState() != null) {
-              if (IdThread.getCurrentState().varBinds != null) {
-                  IdThread.getCurrentState().varBinds.remove(name.toString());
-              }
-          }
-      }
-
     return this;
   }
     @Override
     public IValue lookup(UniqueString var) {
         int loc = var.getVarLoc();
         if (loc < 0) return null;
-        if (TLC.stateWriter instanceof JsonStateWriter) {
-            if (IdThread.getCurrentState() != null && !IdThread.getCurrentState().isExcludedByConstraint && !IdThread.getCurrentState().isInUnchangedNode) {
-                if (IdThread.getCurrentState().varLookups == null) {
-                    IdThread.getCurrentState().varLookups = new HashMap<>();
-                }
-                IdThread.getCurrentState().varLookups.put(var.toString(), this.values[loc]);
-            }
-        }
         return this.values[loc];
     }
 

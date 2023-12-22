@@ -279,11 +279,8 @@ public abstract class TLCState implements Serializable {
 		return PartialBoolean.YES;
 	}
 
-	public Map<String, IValue> fcnApplies = new HashMap<>();
-	public Map<String, IValue> varLookups = new HashMap<>();
-	public Map<String, IValue> varBinds = new HashMap<>();
-
-	public boolean isExcludedByConstraint = false;
+	public VarNode<String, IValue> reads = new VarNode<>("variables", null);
+	public VarNode<String, IValue> writes = new VarNode<>("variables", null);
 
 	public boolean isInUnchangedNode = false;
 

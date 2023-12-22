@@ -427,18 +427,11 @@ public final class Worker extends IdThread implements IWorker, INextStateFunctor
 				throw new InvariantViolatedException();
 			}
 
-			if (IdThread.getCurrentState() != null) {
-				IdThread.getCurrentState().isExcludedByConstraint = true;
-			}
 			// Check if state is excluded by a state or action constraint.
 			// Set the predecessor to make TLC!TLCGet("level") work in
 			// state constraints, i.e. isInModel.
 			final boolean inModel = (this.tool.isInModel(succState.setPredecessor(curState).setAction(action))
 					&& this.tool.isInActions(curState, succState));
-
-			if (IdThread.getCurrentState() != null) {
-				IdThread.getCurrentState().isExcludedByConstraint = false;
-			}
 
 			// Check if state is new or has been seen earlier.
 			boolean unseen = true;
