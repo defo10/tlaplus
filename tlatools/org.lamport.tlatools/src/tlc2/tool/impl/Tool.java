@@ -1300,11 +1300,11 @@ public abstract class Tool
                     IdThread.setReadingActorContext();
 
                     Value bval = this.eval(pred, c, s0, s1, EvalControl.Clear, cm);
+                    IdThread.unsetActorContext();
                     if (!((BoolValue) bval).val) {
                         return resState;
                     }
 
-                    IdThread.unsetActorContext();
                 } else {
                     UniqueString varName = var.getName();
                     Value lval = (Value) s1.lookup(varName);

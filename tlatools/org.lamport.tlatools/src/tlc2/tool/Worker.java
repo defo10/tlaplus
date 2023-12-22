@@ -112,7 +112,6 @@ public final class Worker extends IdThread implements IWorker, INextStateFunctor
 				
 				final long preNext = this.statesGenerated;
 				try {
-					// TODO set and unset eval flag here?
 					this.tool.getNextStates(this, curState);
 				} catch (final WrappingRuntimeException e) {
 					// The next-state relation couldn't be evaluated. If doNextFailed itself throws
