@@ -1147,7 +1147,22 @@ public abstract class Tool
                     // non-deterministically generate successor states (potentially many)
                     ContextEnumerator Enum = this.contexts(pred, c, s0, s1, EvalControl.Clear, cm);
                     Context c1;
+
+                    // for any bounded expression \E m \in messages: ..., consider message as read
+                    for (ExprNode bound : pred.getBdedQuantBounds()) {
+                        UniqueString varNameMaybe = ((OpApplNode)bound).getOperator().getName();
+                        if (IdThread.getCurrentState() != null && IdThread.getCurrentState().containsKey(varNameMaybe)) {
+                            IdThread.getCurrentState().reads.addChildIfAbsent(varNameMaybe.toString(), null);
+                        }
+                    }
+
                     while ((c1 = Enum.nextElement()) != null) {
+                        // TODO this tries out all elements of the bounded set. HT: If the state wasn't in the model
+                        // or violated a constraint/invariant, the reads/writes are not cleared properly, so we have
+                        // to do this here. Problem: what to do for nested bounded exists?
+                        //if (IdThread.getCurrentState() != null) {
+                        //    IdThread.getCurrentState().clearReadsAndWrites();
+                        //}
                         resState = this.getNextStates(action, body, acts, c1, s0, resState, nss, cm);
                     }
                 }
@@ -2238,8 +2253,8 @@ public abstract class Tool
                                 fn.addChildIfAbsent(argVal.toString(), result);
                             }
                             if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.Reading) {
-                                VarNode<String, IValue> writes = IdThread.getCurrentState().reads;
-                                VarNode<String, IValue> fn = writes.addChildIfAbsent(fnName, fcn);
+                                VarNode<String, IValue> reads = IdThread.getCurrentState().reads;
+                                VarNode<String, IValue> fn = reads.addChildIfAbsent(fnName, fcn);
                                 fn.addChildIfAbsent(argVal.toString(), result);
                             }
                         }
