@@ -282,15 +282,14 @@ public abstract class TLCState implements Serializable {
 	public VarNode<String, IValue> reads = new VarNode<>("variables", null);
 	public VarNode<String, IValue> writes = new VarNode<>("variables", null);
 
-	public boolean isInUnchangedNode = false;
-
-	public VarNode<IValue, String> reads = new VarNode<>(null, "variables");
-	public VarNode<IValue, String> writes = new VarNode<>(null, "variables");
+	public void clearReadsAndWrites() {
+		reads = new VarNode<>("variables", null);
+		writes = new VarNode<>("variables", null);
+	}
 
 	public ActorContext actorContext;
 	public enum ActorContext {
 		Writing,
 		Reading
 	}
-
 }

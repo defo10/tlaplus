@@ -90,4 +90,22 @@ public class IdThread extends Thread {
 		}
 		this.localValues[idx] = val;
 	}
+
+	public void setActorContext(TLCState.ActorContext ctx) {
+		if (getCurrentState() != null) {
+			getCurrentState().actorContext = ctx;
+		}
+	}
+
+	public void setWritingActorContext() {
+		setActorContext(TLCState.ActorContext.Writing);
+	}
+
+	public void setReadingActorContext() {
+		setActorContext(TLCState.ActorContext.Reading);
+	}
+
+	public void unsetActorContext() {
+		setActorContext(null);
+	}
 }

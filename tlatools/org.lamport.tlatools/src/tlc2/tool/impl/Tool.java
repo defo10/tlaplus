@@ -1258,11 +1258,26 @@ public abstract class Tool
                 SymbolNode var = this.getPrimedVar(args[0], c, false);
                 // Assert.check(var.getName().getVarLoc() >= 0);
                 if (var == null) {
+                    // not a primed variable on the left side -> must be an equality check, i.e. only reads
+                    if (IdThread.getCurrentState() != null) {
+                        IdThread.getCurrentState().actorContext = TLCState.ActorContext.Reading;
+                    }
                     Value bval = this.eval(pred, c, s0, s1, EvalControl.Clear, cm);
+
+                    if (IdThread.getCurrentState() != null) {
+                        IdThread.getCurrentState().actorContext = null;
+                    }
+
                     if (!((BoolValue) bval).val) {
                         return resState;
                     }
                 } else {
+
+                    if (IdThread.getCurrentState() != null) {
+                        IdThread.getCurrentState().actorContext = TLCState.ActorContext.Writing;
+                    }
+
+                    // TODO all primed assignment must go through here?
                     UniqueString varName = var.getName();
                     IValue lval = s1.lookup(varName);
                     Value rval = this.eval(args[1], c, s0, s1, EvalControl.Clear, cm);
@@ -1270,8 +1285,18 @@ public abstract class Tool
                         resState.bind(varName, rval);
                         resState = this.getNextStates(action, acts, s0, resState, nss, cm);
                         resState.unbind(varName);
+
+                        if (IdThread.getCurrentState() != null) {
+                            IdThread.getCurrentState().actorContext = null;
+                        }
+
                         return resState;
                     } else if (!lval.equals(rval)) {
+
+                        if (IdThread.getCurrentState() != null) {
+                            IdThread.getCurrentState().actorContext = null;
+                        }
+
                         return resState;
                     }
                 }
@@ -1878,9 +1903,23 @@ public abstract class Tool
                     res = this.eval(opDef.getBody(), c1, s0, s1, control, cm);
                 }
             } else if (val instanceof Value) {
-                res = (Value) val;
                 if (val instanceof OpValue) {
                     res = ((OpValue) val).eval(this, args, c, s0, s1, control, cm);
+                } else {
+
+                    // this is where variable values are read without any nesting?
+                    if (IdThread.getCurrentState() != null && IdThread.getCurrentState().containsKey(opNode.getName())) {
+                        TLCState state = IdThread.getCurrentState();
+                        if (state.actorContext == TLCState.ActorContext.Reading) {
+                            state.reads.addChildIfAbsent(opNode.getName().toString(), res);
+                        }
+                        if (state.actorContext == TLCState.ActorContext.Writing) {
+                            state.writes.addChildIfAbsent(opNode.getName().toString(), res);
+                        }
+
+                    }
+
+                    res = (Value) val;
                 }
             }
             /*********************************************************************
@@ -2156,6 +2195,13 @@ public abstract class Tool
                         // Do nothing but warn:
                         MP.printWarning(EC.TLC_EXCEPT_APPLIED_TO_UNKNOWN_FIELD, new String[]{args[0].toString()});
                     } else {
+                        // within an except, we possibly read variables again, e.g.
+                        // [db EXCEPT ![k] = database[k] + 1]
+                        // where this branch contains the inner database[k], which is a read
+                        if (IdThread.getCurrentState() != null) {
+                            IdThread.getCurrentState().actorContext = TLCState.ActorContext.Reading;
+                        }
+
                         Context c1 = c.cons(EXCEPT_AT, atVal);
                         Value rhs = this.eval(pairArgs[1], c1, s0, s1, control, coverage ? cm.get(pairNode) : cm);
                         ValueExcept vex = new ValueExcept(lhs, rhs);
@@ -2182,14 +2228,14 @@ public abstract class Tool
 
                         if (IdThread.getCurrentState() != null) {
                             if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.Writing) {
-                                VarNode<IValue, String> writes = IdThread.getCurrentState().writes;
-                                VarNode<IValue, String> fn = writes.addChild(fcn, fnName);
-                                fn.addChild(result, argVal.toString());
+                                VarNode<String, IValue> writes = IdThread.getCurrentState().writes;
+                                VarNode<String, IValue> fn = writes.addChildIfAbsent(fnName, fcn);
+                                fn.addChildIfAbsent(argVal.toString(), result);
                             }
                             if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.Reading) {
-                                VarNode<IValue, String> reads = IdThread.getCurrentState().reads;
-                                VarNode<IValue, String> fn = reads.addChild(fcn, fnName);
-                                fn.addChild(result, argVal.toString());
+                                VarNode<String, IValue> writes = IdThread.getCurrentState().reads;
+                                VarNode<String, IValue> fn = writes.addChildIfAbsent(fnName, fcn);
+                                fn.addChildIfAbsent(argVal.toString(), result);
                             }
                         }
                     }
