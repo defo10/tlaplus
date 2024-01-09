@@ -172,15 +172,17 @@ public class JsonStateWriter extends StateWriter {
         final String toNode = Long.toString(successor.fingerPrint());
         String label = action.getName().toString();
 
+        String readsKeyValueJson = IdThread.getCurrentState().reads.toString();
+        String writesKeyValueJson = IdThread.getCurrentState().writes.toString();
+        /*
         System.out.println("++++++++++++++++++");
         System.out.println(label);
         System.out.println("READS:");
-        String readsKeyValueJson = IdThread.getCurrentState().reads.toString();
         System.out.println(readsKeyValueJson);
         System.out.println("WRITES:");
-        String writesKeyValueJson = IdThread.getCurrentState().writes.toString();
         System.out.println(writesKeyValueJson);
         System.out.println("++++++++++++++++++");
+        */
 
         StringBuilder jsonBuilder = new StringBuilder("{");
         jsonBuilder.append("\"from\":\"").append(fromNode).append("\",");
