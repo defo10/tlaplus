@@ -188,6 +188,7 @@ public class JsonStateWriter extends StateWriter {
         jsonBuilder.append("\"from\":\"").append(fromNode).append("\",");
         jsonBuilder.append("\"to\":\"").append(toNode).append("\",");
         jsonBuilder.append("\"label\":\"").append(label).append("\",");
+        jsonBuilder.append("\"parameters\":\"").append(action.parameters).append("\",");
         jsonBuilder.append("\"$type\": \"edge").append("\",");
         jsonBuilder.append(readsKeyValueJson).append(",");
         jsonBuilder.append(writesKeyValueJson);
