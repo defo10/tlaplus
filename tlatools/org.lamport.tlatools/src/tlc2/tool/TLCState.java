@@ -278,15 +278,18 @@ public abstract class TLCState implements Serializable {
 
 	public VarNode<String, IValue> reads = new VarNode<>("reads", null);
 	public VarNode<String, IValue> writes = new VarNode<>("writes", null);
+	public VarNode<String, IValue> readsDuringWrites = new VarNode<>("readsDuringWrites", null);
 
 	public void clearReadsAndWrites() {
 		reads = new VarNode<>("reads", null);
 		writes = new VarNode<>("writes", null);
+		readsDuringWrites = new VarNode<>("readsDuringWrites", null);
 	}
 
 	public ActorContext actorContext;
 	public enum ActorContext {
 		Writing,
-		Reading
+		Reading,
+		ReadDuringWrite, // when reading variables while on the right side of a primed expression
 	}
 }

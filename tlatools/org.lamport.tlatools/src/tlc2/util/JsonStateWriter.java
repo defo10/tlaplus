@@ -174,6 +174,7 @@ public class JsonStateWriter extends StateWriter {
 
         String readsKeyValueJson = IdThread.getCurrentState().reads.toString();
         String writesKeyValueJson = IdThread.getCurrentState().writes.toString();
+        String readsDuringWritesKeyValueJson = IdThread.getCurrentState().readsDuringWrites.toString();
         /*
         System.out.println("++++++++++++++++++");
         System.out.println(label);
@@ -191,6 +192,7 @@ public class JsonStateWriter extends StateWriter {
         jsonBuilder.append("\"parameters\":\"").append(action.parameters).append("\",");
         jsonBuilder.append("\"$type\": \"edge").append("\",");
         jsonBuilder.append(readsKeyValueJson).append(",");
+        jsonBuilder.append(readsDuringWritesKeyValueJson).append(",");
         jsonBuilder.append(writesKeyValueJson);
 
         jsonBuilder.append("}");

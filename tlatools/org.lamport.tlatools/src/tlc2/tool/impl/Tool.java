@@ -1926,6 +1926,9 @@ public abstract class Tool
                         if (state.actorContext == TLCState.ActorContext.Writing) {
                             state.writes.addChildIfAbsent(opNode.getName().toString(), res);
                         }
+                        if (state.actorContext == TLCState.ActorContext.ReadDuringWrite) {
+                            state.readsDuringWrites.addChildIfAbsent(opNode.getName().toString(), res);
+                        }
 
                     }
 
@@ -2222,7 +2225,7 @@ public abstract class Tool
                         // within an except, we possibly read variables again, e.g.
                         // [db EXCEPT ![k] = database[k] + 1]
                         // where this branch contains the inner database[k], which is a read
-                        IdThread.setReadingActorContext();
+                        IdThread.setReadDuringWriteContext();
 
                         Context c1 = c.cons(EXCEPT_AT, atVal);
                         Value rhs = this.eval(pairArgs[1], c1, s0, s1, control, coverage ? cm.get(pairNode) : cm);
@@ -2254,6 +2257,11 @@ public abstract class Tool
                         if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.Reading) {
                             VarNode<String, IValue> reads = IdThread.getCurrentState().reads;
                             VarNode<String, IValue> fn = reads.addChildIfAbsent(fnName, fcn);
+                            fn.addChildIfAbsent(argVal.toString(), result);
+                        }
+                        if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.ReadDuringWrite) {
+                            VarNode<String, IValue> readsDuringWrites = IdThread.getCurrentState().readsDuringWrites;
+                            VarNode<String, IValue> fn = readsDuringWrites.addChildIfAbsent(fnName, fcn);
                             fn.addChildIfAbsent(argVal.toString(), result);
                         }
                     }
