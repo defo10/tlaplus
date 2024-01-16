@@ -1278,7 +1278,8 @@ public abstract class Tool
                 SymbolNode var = this.getPrimedVar(args[0], c, false);
                 // Assert.check(var.getName().getVarLoc() >= 0);
                 if (var == null) {
-                    // not a primed variable on the left side -> must be an equality check, i.e. only reads
+                    // not a primed variable on the left side -> must be an equality check, so the return will be a
+                    // a boolean, and only have variable reads
                     IdThread.setReadingActorContext();
                     Value bval = this.eval(pred, c, s0, s1, EvalControl.Clear, cm);
 
@@ -1294,6 +1295,10 @@ public abstract class Tool
                     UniqueString varName = var.getName();
                     IValue lval = s1.lookup(varName);
                     Value rval = this.eval(args[1], c, s0, s1, EvalControl.Clear, cm);
+
+                    if (IdThread.getCurrentState() != null) {
+                        IdThread.getCurrentState().writes.addChildIfAbsent(varName.toString(), rval);
+                    }
 
                     IdThread.unsetActorContext();
                     if (lval == null) {
