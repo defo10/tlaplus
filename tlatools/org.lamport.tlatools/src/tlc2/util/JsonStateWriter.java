@@ -54,8 +54,10 @@ public class JsonStateWriter extends StateWriter {
     // Determines whether or not stuttering edges should be rendered.
     private final boolean stuttering;
 
+    private boolean isFirstState = true;
+
     public JsonStateWriter() throws IOException {
-        this("DotStateWriter.json", "", false, false, false, false, false);
+        this("JsonStateWriter.json", "", false, false, false, false, false);
     }
 
     public JsonStateWriter(final String fname, final String strict) throws IOException {
@@ -93,7 +95,8 @@ public class JsonStateWriter extends StateWriter {
      */
     @Override
     public boolean isDot() {
-        return true;
+        return false;
+        //return true;
     }
 
     public boolean isConstrained() {
@@ -109,6 +112,13 @@ public class JsonStateWriter extends StateWriter {
         final String id = Long.toString(state.fingerPrint());
         final String vals = stateValsToJson(state);
         final String node = String.format("{\"id\": \"%s\", \"vars\":%s, \"$type\": \"init-node\"}", id, vals);
+
+        if (!this.isFirstState) {
+            this.writer.append(",\n");
+        } else {
+            this.isFirstState = false;
+        }
+
         this.writer.append(node);
 
         maintainRanks(state);
