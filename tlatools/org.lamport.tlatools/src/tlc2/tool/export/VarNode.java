@@ -27,6 +27,17 @@ public class VarNode<K extends Comparable<?>, V> {
         return node;
     }
 
+    public VarNode<K, V> deepCopy() {
+        VarNode<K, V> copy = new VarNode<>(key, payload);
+
+        for (K childKey : children.keySet()) {
+            VarNode<K, V> copiedChild = children.get(childKey).deepCopy();
+            copy.children.put(childKey, copiedChild);
+        }
+        
+        return copy;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {

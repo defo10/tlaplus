@@ -830,8 +830,10 @@ public abstract class Tool
     @Override
     public boolean getNextStates(final INextStateFunctor functor, final TLCState state) {
         for (int i = 0; i < actions.length; i++) {
+            // TODO together with bounded exists this seems to lead to wrong states
             // When we try out all possible actions following from state,
             // we need to reset the read/write context before each try.
+
             if (IdThread.getCurrentState() != null) {
                 IdThread.getCurrentState().clearReadsAndWrites();
             }
@@ -1156,13 +1158,26 @@ public abstract class Tool
                         }
                     }
 
+                    VarNode<String, IValue> writes = null;
+                    VarNode<String, IValue> reads = null;
+                    VarNode<String, IValue> readThroughWrites = null;
+                    TLCState state = IdThread.getCurrentState();
+                    if (state != null) {
+                        writes = state.writes.deepCopy();
+                        reads = state.reads.deepCopy();
+                        readThroughWrites = state.readsDuringWrites.deepCopy();
+                    }
+
                     while ((c1 = Enum.nextElement()) != null) {
-                        // TODO this tries out all elements of the bounded set. HT: If the state wasn't in the model
-                        // or violated a constraint/invariant, the reads/writes are not cleared properly, so we have
-                        // to do this here. Problem: what to do for nested bounded exists?
-                        //if (IdThread.getCurrentState() != null) {
-                        //    IdThread.getCurrentState().clearReadsAndWrites();
-                        //}
+                        // TODO this tries out all elements of the bounded set. We copied our state before the loop
+                        // and reset to it for each possible "branch" we are checking. Clearing only create a new
+                        // reference, leaving the trees intact
+                        // // TODO Problem: what to edo for nested bounded exists?
+                        if (state != null) {
+                            state.writes = writes.deepCopy();
+                            state.reads = reads.deepCopy();
+                            state.readsDuringWrites = readThroughWrites.deepCopy();
+                        }
                         resState = this.getNextStates(action, body, acts, c1, s0, resState, nss, cm);
                     }
                 }
@@ -2220,10 +2235,7 @@ public abstract class Tool
                         node = node.addChildIfAbsent(varName, result);
 
                         for (Value v : lhs) {
-                            // value could be a string for record types, which we don't want to track
-                            if (v instanceof ModelValue) {
-                                node = node.addChildIfAbsent(v.toUnquotedString(), v);
-                            }
+                            node = node.addChildIfAbsent(v.toUnquotedString(), v);
                         }
                     }
 
