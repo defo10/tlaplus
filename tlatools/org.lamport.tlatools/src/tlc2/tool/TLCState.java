@@ -286,6 +286,24 @@ public abstract class TLCState implements Serializable {
 		readsDuringWrites = new VarNode<>("readsDuringWrites", null);
 	}
 
+	public VarNode<String, IValue> addChildIfAbsentOfCurrentContext(String key, IValue payload) {
+
+		if (this.actorContext == null || key == null) {
+			return null;
+		}
+
+		switch (this.actorContext) {
+			case Reading:
+				return this.reads.addChildIfAbsent(key, payload);
+			case Writing:
+				return this.writes.addChildIfAbsent(key, payload);
+			case ReadDuringWrite:
+				return this.readsDuringWrites.addChildIfAbsent(key, payload);
+		}
+
+		return null;
+	}
+
 	public ActorContext actorContext;
 	public enum ActorContext {
 		Writing,

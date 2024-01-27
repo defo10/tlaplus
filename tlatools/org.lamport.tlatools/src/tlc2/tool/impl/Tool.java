@@ -1188,6 +1188,8 @@ public abstract class Tool
             }
             case OPCODE_fa:     // FcnApply
             {
+                IdThread.setReadingActorContext();
+
                 Value fval = this.eval(args[0], c, s0, s1, EvalControl.KeepLazy, cm);
                 if (fval instanceof FcnLambdaValue) {
                     FcnLambdaValue fcn = (FcnLambdaValue) fval;
@@ -1204,10 +1206,22 @@ public abstract class Tool
                 FunctionValue fcn = (FunctionValue) fval;
                 Value argVal = this.eval(args[1], c, s0, s1, EvalControl.Clear, cm);
                 Value bval = fcn.apply(argVal, EvalControl.Clear);
+
+                // TODO add read here
+                // hypothesis: this is a function apply in conjunct list
+                // we expect a boolean return value
+                if (IdThread.getCurrentState() != null) {
+                    String var = args[0].stn.toString();
+                    VarNode n = IdThread.getCurrentState().reads.addChildIfAbsent(var, null);
+                    n.addChildIfAbsent(argVal.toString(), null);
+                }
+
                 if (!(bval instanceof BoolValue)) {
                     Assert.fail(EC.TLC_EXPECTED_EXPRESSION_IN_COMPUTING2, new String[]{"next states", "boolean",
                             pred.toString()}, args[1], c);
                 }
+
+                IdThread.unsetActorContext();
                 if (((BoolValue) bval).val) {
                     return this.getNextStates(action, acts, s0, s1, nss, cm);
                 }
@@ -1925,18 +1939,9 @@ public abstract class Tool
                     // this is where variable values are read eventually
                     if (IdThread.getCurrentState() != null && IdThread.getCurrentState().containsKey(opNode.getName())) {
                         TLCState state = IdThread.getCurrentState();
-                        if (state.actorContext == TLCState.ActorContext.Reading) {
-                            state.reads.addChildIfAbsent(opNode.getName().toString(), res);
-                        }
-                        if (state.actorContext == TLCState.ActorContext.Writing) {
-                            state.writes.addChildIfAbsent(opNode.getName().toString(), res);
-                        }
-                        if (state.actorContext == TLCState.ActorContext.ReadDuringWrite) {
-                            state.readsDuringWrites.addChildIfAbsent(opNode.getName().toString(), res);
-                        }
-
+                        String key = opNode.getName().toString();
+                        state.addChildIfAbsentOfCurrentContext(key, res);
                     }
-
                     res = (Value) val;
                 }
             }
@@ -2342,6 +2347,13 @@ public abstract class Tool
             {
                 Value rval = this.eval(args[0], c, s0, s1, control, cm);
                 Value sval = (Value) WorkerValue.mux(args[1].getToolObject(toolId));
+
+
+                if (IdThread.getCurrentState() != null && IdThread.getCurrentState().actorContext != null) {
+                    VarNode n = IdThread.getCurrentState().addChildIfAbsentOfCurrentContext(args[0].stn.toString(), rval);
+                    n.addChildIfAbsent(sval.toUnquotedString(), null);
+                }
+
                 if (rval instanceof RecordValue) {
                     Value result = (Value) ((RecordValue) rval).select(sval);
                     if (result == null) {
