@@ -304,6 +304,24 @@ public abstract class TLCState implements Serializable {
 		return null;
 	}
 
+	public VarNode<String, IValue> findVarNodeWithIdenticalPayloadOfCurrentContext(IValue payload) {
+		if (this.actorContext == null) {
+			return null;
+		}
+
+		switch (this.actorContext) {
+			case Reading:
+				return this.reads.findNodeWithIdenticalPayload(payload);
+			case Writing:
+				return this.writes.findNodeWithIdenticalPayload(payload);
+			case ReadDuringWrite:
+				return this.readsDuringWrites.findNodeWithIdenticalPayload(payload);
+		}
+
+		return null;
+
+	}
+
 	public ActorContext actorContext;
 	public enum ActorContext {
 		Writing,

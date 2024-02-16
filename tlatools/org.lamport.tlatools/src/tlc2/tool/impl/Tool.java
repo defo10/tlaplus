@@ -1150,14 +1150,6 @@ public abstract class Tool
                     ContextEnumerator Enum = this.contexts(pred, c, s0, s1, EvalControl.Clear, cm);
                     Context c1;
 
-                    // for any bounded expression \E m \in messages: ..., consider message as read
-                    for (ExprNode bound : pred.getBdedQuantBounds()) {
-                        UniqueString varNameMaybe = ((OpApplNode)bound).getOperator().getName();
-                        if (IdThread.getCurrentState() != null && IdThread.getCurrentState().containsKey(varNameMaybe)) {
-                            IdThread.getCurrentState().reads.addChildIfAbsent(varNameMaybe.toString(), null);
-                        }
-                    }
-
                     VarNode<String, IValue> writes = null;
                     VarNode<String, IValue> reads = null;
                     VarNode<String, IValue> readThroughWrites = null;
@@ -1169,6 +1161,7 @@ public abstract class Tool
                     }
 
                     while ((c1 = Enum.nextElement()) != null) {
+                        // for any bounded exist \E m \in messages: ..., consider message as read
                         // TODO this tries out all elements of the bounded set. We copied our state before the loop
                         // and reset to it for each possible "branch" we are checking. Clearing only create a new
                         // reference, leaving the trees intact
@@ -1177,6 +1170,8 @@ public abstract class Tool
                             state.writes = writes.deepCopy();
                             state.reads = reads.deepCopy();
                             state.readsDuringWrites = readThroughWrites.deepCopy();
+
+                            addBoundedExpressionToReads(state, pred, c, s0, s1, EvalControl.Clear, cm);
                         }
                         resState = this.getNextStates(action, body, acts, c1, s0, resState, nss, cm);
                     }
@@ -2268,23 +2263,23 @@ public abstract class Tool
                     Value argVal = this.eval(args[1], c, s0, s1, control, cm);
                     result = fcn.apply(argVal, control);
 
-                    OpApplNode n = (OpApplNode) args[0];
-                    String fnName = n.getOperator().getName().toString();
-                    if (IdThread.getCurrentState() != null) {
-                        if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.Writing) {
-                            VarNode<String, IValue> writes = IdThread.getCurrentState().writes;
-                            VarNode<String, IValue> fn = writes.addChildIfAbsent(fnName, fcn);
-                            fn.addChildIfAbsent(argVal.toString(), result);
-                        }
-                        if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.Reading) {
-                            VarNode<String, IValue> reads = IdThread.getCurrentState().reads;
-                            VarNode<String, IValue> fn = reads.addChildIfAbsent(fnName, fcn);
-                            fn.addChildIfAbsent(argVal.toString(), result);
-                        }
-                        if (IdThread.getCurrentState().actorContext == TLCState.ActorContext.ReadDuringWrite) {
-                            VarNode<String, IValue> readsDuringWrites = IdThread.getCurrentState().readsDuringWrites;
-                            VarNode<String, IValue> fn = readsDuringWrites.addChildIfAbsent(fnName, fcn);
-                            fn.addChildIfAbsent(argVal.toString(), result);
+                    TLCState state  = IdThread.getCurrentState();
+                    if (state != null) {
+                        OpApplNode n = (OpApplNode) args[0];
+                        String fnName = n.getOperator().getName().toString();
+
+                        if (fnName.equals("$FcnApply")) {
+                            // for a nested function apply, the operator is the function apply, not the name of the fn
+                            // we would usually expect
+                            VarNode<String, IValue> varNode = state.findVarNodeWithIdenticalPayloadOfCurrentContext(fcn);
+                            if (varNode != null) {
+                                varNode.addChildIfAbsent(argVal.toUnquotedString(), result);
+                            }
+                        } else {
+                            VarNode<String, IValue> fn = state.addChildIfAbsentOfCurrentContext(fnName, fcn);
+                            if (fn != null) {
+                                fn.addChildIfAbsent(argVal.toUnquotedString(), result);
+                            }
                         }
                     }
                 } else if ((fval instanceof TupleValue) ||

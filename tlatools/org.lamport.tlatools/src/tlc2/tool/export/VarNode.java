@@ -1,16 +1,30 @@
 package tlc2.tool.export;
 
+import tlc2.module.Json;
+import tlc2.value.IValue;
+
+import java.io.IOException;
 import java.util.*;
 
-public class VarNode<K extends Comparable<?>, V> {
+public class VarNode<K extends Comparable<?>, V extends IValue> {
     public final K key;
     public final V payload;
-    public final Map<K, VarNode<K, V>> children;
+    public final Object children;
 
-    public VarNode(K key, V payload) {
+    private final boolean isChildSet;
+    public VarNode(K key, V payload, boolean isChildSet) {
         this.key = key;
         this.payload = payload;
-        this.children = new HashMap<>(10);
+        this.isChildSet = isChildSet;
+        if (isChildSet) {
+            this.children = new HashSet<V>(7);
+        } else {
+            this.children = new HashMap<K, VarNode<K, V>>(7);
+        }
+    }
+
+    public VarNode(K key, V payload) {
+        this(key, payload, false);
     }
 
     /** adds a child to this node. If key already exists, it returns the old one.
@@ -19,22 +33,78 @@ public class VarNode<K extends Comparable<?>, V> {
      * @return
      */
     public VarNode<K, V> addChildIfAbsent(K key, V payload) {
-        if (this.children.containsKey(key)) {
-            return this.children.get(key);
+        return addChildIfAbsent(key, payload, false);
+    }
+
+    /**
+     * adds a child to this node. If key already exists, it returns the old one.
+     *
+     * @param key
+     * @param payload
+     * @param isChildSet
+     * @return
+     */
+    public VarNode<K, V> addChildIfAbsent(K key, V payload, boolean isChildSet) {
+        Map<K, VarNode<K, V>> children = this.getChildrenMap();
+        if (children.containsKey(key)) {
+            return children.get(key);
         }
-        VarNode<K, V> node = new VarNode<>(key, payload);
-        this.children.put(key, node);
+        VarNode<K, V> node = new VarNode<>(key, payload, isChildSet);
+        children.put(key, node);
         return node;
     }
 
-    public VarNode<K, V> deepCopy() {
-        VarNode<K, V> copy = new VarNode<>(key, payload);
+    public void addChild(V payload) {
+        Set<V> children = this.getChildrenSet();
+        children.add(payload);
+    }
 
-        for (K childKey : children.keySet()) {
-            VarNode<K, V> copiedChild = children.get(childKey).deepCopy();
-            copy.children.put(childKey, copiedChild);
+    public Map<K, VarNode<K, V>> getChildrenMap() {
+        if (isChildSet) {
+            throw new RuntimeException("VarNode has a Set as child!");
         }
-        
+        return (Map<K, VarNode<K, V>>) this.children;
+    }
+
+    public Set<V> getChildrenSet() {
+        if (!isChildSet) {
+            throw new RuntimeException("VarNode has a Map as child!");
+        }
+        return (Set<V>) this.children;
+    }
+
+    public VarNode<K, V> findNodeWithIdenticalPayload(V payload) {
+        if (this.payload == payload) {
+            return this;
+        }
+        Map<K, VarNode<K, V>> children = this.getChildrenMap();
+
+        for (VarNode<K, V> c : children.values()) {
+            VarNode<K, V> match = c.findNodeWithIdenticalPayload(payload);
+            if (match != null) {
+                return match;
+            }
+        }
+
+        return null;
+    }
+
+    public VarNode<K, V> deepCopy() {
+        VarNode<K, V> copy = new VarNode<>(key, payload, this.isChildSet);
+
+        if (isChildSet) {
+            Set<V> children = this.getChildrenSet();
+            for (V c : children) {
+                copy.getChildrenSet().add(c);
+            }
+        } else {
+            Map<K, VarNode<K, V>> children = this.getChildrenMap();
+            for (K childKey : children.keySet()) {
+                VarNode<K, V> copiedChild = children.get(childKey).deepCopy();
+                copy.getChildrenMap().put(childKey, copiedChild);
+            }
+        }
+
         return copy;
     }
 
@@ -52,15 +122,52 @@ public class VarNode<K extends Comparable<?>, V> {
 
     @Override
     public String toString() {
+        if (isChildSet) {
+            return toStringSet();
+        } else {
+            return toStringMap();
+        }
+    }
+
+    private String toStringSet() {
         StringBuilder keyValueBuilder = new StringBuilder();
 
         if (this.key != null) keyValueBuilder.append("\"").append(this.key).append("\":");
 
-        if (this.children.isEmpty()) {
+        Set<V> children = this.getChildrenSet();
+
+        if (children.isEmpty()) {
+            keyValueBuilder.append("[]");
+        } else {
+            keyValueBuilder.append("[");
+
+            for (IValue vals : children) {
+                try {
+                    keyValueBuilder.append(Json.toJson(vals)).append(",");
+                } catch (IOException e) {
+                    System.out.println("Failed to parse vals as json:" + vals);
+                }
+            }
+            // delete last "," to be json conforming
+            keyValueBuilder.deleteCharAt(keyValueBuilder.length() - 1);
+            keyValueBuilder.append("]");
+        }
+
+        return keyValueBuilder.toString();
+    }
+
+    private String toStringMap() {
+        StringBuilder keyValueBuilder = new StringBuilder();
+
+        if (this.key != null) keyValueBuilder.append("\"").append(this.key).append("\":");
+
+        Map<K, VarNode<K, V>> children = this.getChildrenMap();
+
+        if (children.isEmpty()) {
             keyValueBuilder.append("true");
         } else {
             keyValueBuilder.append("{");
-            for (VarNode<K, V> entry : this.children.values()) {
+            for (VarNode<K, V> entry : children.values()) {
                 keyValueBuilder.append(entry.toString()).append(",");
             }
             // delete last "," to be json conforming
