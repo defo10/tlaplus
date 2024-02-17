@@ -132,8 +132,6 @@ public class JsonStateWriter extends StateWriter {
                 throw new RuntimeException(e);
             }
         }
-
-        if (IdThread.getCurrentState() == null) return;
     }
 
     protected void maintainRanks(final TLCState state) {
@@ -182,9 +180,8 @@ public class JsonStateWriter extends StateWriter {
         final String toNode = Long.toString(successor.fingerPrint());
         String label = action.getName().toString();
 
-        String readsKeyValueJson = IdThread.getCurrentState().reads.toString();
-        String writesKeyValueJson = IdThread.getCurrentState().writes.toString();
-        String readsDuringWritesKeyValueJson = IdThread.getCurrentState().readsDuringWrites.toString();
+        String readsKeyValueJson = state.reads.toString();
+        String writesKeyValueJson = state.writes.toString();
         /*
         System.out.println("++++++++++++++++++");
         System.out.println(label);
@@ -202,7 +199,6 @@ public class JsonStateWriter extends StateWriter {
         jsonBuilder.append("\"parameters\":\"").append(action.parameters).append("\",");
         jsonBuilder.append("\"$type\": \"edge").append("\",");
         jsonBuilder.append(readsKeyValueJson).append(",");
-        jsonBuilder.append(readsDuringWritesKeyValueJson).append(",");
         jsonBuilder.append(writesKeyValueJson);
 
         jsonBuilder.append("}");
@@ -250,7 +246,7 @@ public class JsonStateWriter extends StateWriter {
             }
         }
 
-        IdThread.getCurrentState().clearReadsAndWrites();
+        state.clearReadsAndWrites();
     }
 
     private String varsMapToJson(Map<String, IValue> map) {

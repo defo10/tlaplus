@@ -11,7 +11,7 @@ public class VarNode<K extends Comparable<?>, V extends IValue> {
     public final V payload;
     public final Object children;
 
-    private final boolean isChildSet;
+    public final boolean isChildSet;
     public VarNode(K key, V payload, boolean isChildSet) {
         this.key = key;
         this.payload = payload;
@@ -59,6 +59,7 @@ public class VarNode<K extends Comparable<?>, V extends IValue> {
         children.add(payload);
     }
 
+    /** check isChildSet before calling this method! */
     public Map<K, VarNode<K, V>> getChildrenMap() {
         if (isChildSet) {
             throw new RuntimeException("VarNode has a Set as child!");
@@ -66,6 +67,7 @@ public class VarNode<K extends Comparable<?>, V extends IValue> {
         return (Map<K, VarNode<K, V>>) this.children;
     }
 
+    /** check isChildSet before calling this method! */
     public Set<V> getChildrenSet() {
         if (!isChildSet) {
             throw new RuntimeException("VarNode has a Map as child!");
@@ -77,12 +79,26 @@ public class VarNode<K extends Comparable<?>, V extends IValue> {
         if (this.payload == payload) {
             return this;
         }
-        Map<K, VarNode<K, V>> children = this.getChildrenMap();
 
-        for (VarNode<K, V> c : children.values()) {
-            VarNode<K, V> match = c.findNodeWithIdenticalPayload(payload);
-            if (match != null) {
-                return match;
+        if (this.isChildSet) {
+            Set<V> childrenSet = this.getChildrenSet();
+            for (V childPayload : childrenSet) {
+                // there is a problem in the semantics here:
+                // for map like structures, each key corresponds to a varnode but if its a set node
+                // the payload we are looking for might be one of the elements of the set.
+                // in this case, we return the closest var node (this), but this might be confusing
+                if (childPayload == payload) {
+                    return this;
+                }
+            }
+        } else {
+            Map<K, VarNode<K, V>> children = this.getChildrenMap();
+
+            for (VarNode<K, V> c : children.values()) {
+                VarNode<K, V> match = c.findNodeWithIdenticalPayload(payload);
+                if (match != null) {
+                    return match;
+                }
             }
         }
 

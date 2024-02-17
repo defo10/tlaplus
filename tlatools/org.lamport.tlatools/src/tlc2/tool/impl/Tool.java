@@ -1153,12 +1153,8 @@ public abstract class Tool
                     VarNode<String, IValue> writes = null;
                     VarNode<String, IValue> reads = null;
                     VarNode<String, IValue> readThroughWrites = null;
-                    TLCState state = IdThread.getCurrentState();
-                    if (state != null) {
-                        writes = state.writes.deepCopy();
-                        reads = state.reads.deepCopy();
-                        readThroughWrites = state.readsDuringWrites.deepCopy();
-                    }
+                    writes = s0.writes.deepCopy();
+                    reads = s0.reads.deepCopy();
 
                     while ((c1 = Enum.nextElement()) != null) {
                         // for any bounded exist \E m \in messages: ..., consider message as read
@@ -1166,13 +1162,18 @@ public abstract class Tool
                         // and reset to it for each possible "branch" we are checking. Clearing only create a new
                         // reference, leaving the trees intact
                         // // TODO Problem: what to edo for nested bounded exists?
-                        if (state != null) {
-                            state.writes = writes.deepCopy();
-                            state.reads = reads.deepCopy();
-                            state.readsDuringWrites = readThroughWrites.deepCopy();
+                        s0.writes = writes.deepCopy();
+                        s0.reads = reads.deepCopy();
+                        Context ctx = c1;
+                        do {
+                            for (ExprNode bound : pred.getBdedQuantBounds()) {
+                                UniqueString varNameMaybe = ((OpApplNode)bound).getOperator().getName();
+                                VarNode<String, IValue> nodeSet = s0.reads.addChildIfAbsent(varNameMaybe.toString(), null, true);
+                                nodeSet.addChild((IValue)ctx.getValue());
+                            }
+                            ctx = ctx.next();
+                        } while(ctx.hasNext() && ctx != c); // ctx == c if all newly bound variables were processed
 
-                            addBoundedExpressionToReads(state, pred, c, s0, s1, EvalControl.Clear, cm);
-                        }
                         resState = this.getNextStates(action, body, acts, c1, s0, resState, nss, cm);
                     }
                 }
@@ -2355,12 +2356,6 @@ public abstract class Tool
                 Value rval = this.eval(args[0], c, s0, s1, control, cm);
                 Value sval = (Value) WorkerValue.mux(args[1].getToolObject(toolId));
 
-
-                if (IdThread.getCurrentState() != null && IdThread.getCurrentState().actorContext != null) {
-                    VarNode n = IdThread.getCurrentState().addChildIfAbsentOfCurrentContext(args[0].stn.toString(), rval);
-                    n.addChildIfAbsent(sval.toUnquotedString(), null);
-                }
-
                 if (rval instanceof RecordValue) {
                     Value result = (Value) ((RecordValue) rval).select(sval);
                     if (result == null) {
@@ -2370,11 +2365,27 @@ public abstract class Tool
                     return result;
                 } else {
                     FcnRcdValue fcn = (FcnRcdValue) rval.toFcnRcd();
+
                     if (fcn == null) {
                         Assert.fail("Attempted to select field " + sval + " from a non-record" +
                                 " value " + Values.ppr(rval.toString()) + "\n" + expr, expr, c);
                     }
-                    return fcn.apply(sval, control);
+
+                    Value fcnReturn = fcn.apply(sval, control);
+
+                    if (s0 != null && s0.actorContext != null) {
+                        VarNode existingNode = s0.findVarNodeWithIdenticalPayloadOfCurrentContext(rval);
+                        if (existingNode != null) {
+                            if (!existingNode.isChildSet) { // if isChildSet, we added the whole element already
+                                existingNode.addChildIfAbsent(sval.toUnquotedString(), fcnReturn);
+                            }
+                        } else {
+                            VarNode n = IdThread.getCurrentState().addChildIfAbsentOfCurrentContext(args[0].stn.toString(), rval);
+                            n.addChildIfAbsent(sval.toUnquotedString(), fcnReturn);
+                        }
+                    }
+
+                    return fcnReturn;
                 }
             }
             case OPCODE_se:     // SetEnumerate

@@ -278,12 +278,10 @@ public abstract class TLCState implements Serializable {
 
 	public VarNode<String, IValue> reads = new VarNode<>("reads", null);
 	public VarNode<String, IValue> writes = new VarNode<>("writes", null);
-	public VarNode<String, IValue> readsDuringWrites = new VarNode<>("readsDuringWrites", null);
 
 	public void clearReadsAndWrites() {
 		reads = new VarNode<>("reads", null);
 		writes = new VarNode<>("writes", null);
-		readsDuringWrites = new VarNode<>("readsDuringWrites", null);
 	}
 
 	public VarNode<String, IValue> addChildIfAbsentOfCurrentContext(String key, IValue payload) {
@@ -297,8 +295,6 @@ public abstract class TLCState implements Serializable {
 				return this.reads.addChildIfAbsent(key, payload);
 			case Writing:
 				return this.writes.addChildIfAbsent(key, payload);
-			case ReadDuringWrite:
-				return this.readsDuringWrites.addChildIfAbsent(key, payload);
 		}
 
 		return null;
@@ -314,8 +310,6 @@ public abstract class TLCState implements Serializable {
 				return this.reads.findNodeWithIdenticalPayload(payload);
 			case Writing:
 				return this.writes.findNodeWithIdenticalPayload(payload);
-			case ReadDuringWrite:
-				return this.readsDuringWrites.findNodeWithIdenticalPayload(payload);
 		}
 
 		return null;
