@@ -32,7 +32,6 @@ import tla2sany.semantic.Subst;
 import tla2sany.semantic.SubstInNode;
 import tla2sany.semantic.SymbolNode;
 import tla2sany.semantic.ThmOrAssumpDefNode;
-import tlc2.TLC;
 import tlc2.TLCGlobals;
 import tlc2.output.EC;
 import tlc2.output.MP;
@@ -60,39 +59,8 @@ import tlc2.value.IMVPerm;
 import tlc2.value.IValue;
 import tlc2.value.ValueConstants;
 import tlc2.value.Values;
-import tlc2.value.impl.FunctionValue;
-import tlc2.value.impl.BoolValue;
-import tlc2.value.impl.Enumerable;
+import tlc2.value.impl.*;
 import tlc2.value.impl.Enumerable.Ordering;
-import tlc2.value.impl.FcnLambdaValue;
-import tlc2.value.impl.FcnParams;
-import tlc2.value.impl.FcnRcdValue;
-import tlc2.value.impl.IntValue;
-import tlc2.value.impl.LazySupplierValue;
-import tlc2.value.impl.LazyValue;
-import tlc2.value.impl.MVPerm;
-import tlc2.value.impl.MVPerms;
-import tlc2.value.impl.ModelValue;
-import tlc2.value.impl.OpLambdaValue;
-import tlc2.value.impl.OpValue;
-import tlc2.value.impl.RecordValue;
-import tlc2.value.impl.Reducible;
-import tlc2.value.impl.SetCapValue;
-import tlc2.value.impl.SetCupValue;
-import tlc2.value.impl.SetDiffValue;
-import tlc2.value.impl.SetEnumValue;
-import tlc2.value.impl.SetOfFcnsValue;
-import tlc2.value.impl.SetOfRcdsValue;
-import tlc2.value.impl.SetOfTuplesValue;
-import tlc2.value.impl.SetPredValue;
-import tlc2.value.impl.StringValue;
-import tlc2.value.impl.SubsetValue;
-import tlc2.value.impl.TupleValue;
-import tlc2.value.impl.UnionValue;
-import tlc2.value.impl.Value;
-import tlc2.value.impl.ValueEnumeration;
-import tlc2.value.impl.ValueExcept;
-import tlc2.value.impl.ValueVec;
 import util.Assert;
 import util.Assert.TLCRuntimeException;
 import util.FilenameToStream;
@@ -1319,11 +1287,11 @@ public abstract class Tool
 
                     UniqueString varName = var.getName();
                     IValue lval = s1.lookup(varName);
-                    Value rval = this.eval(args[1], c, s0, s1, EvalControl.Clear, cm);
 
-                    if (IdThread.getCurrentState() != null) {
-                        IdThread.getCurrentState().writes.addChildIfAbsent(varName.toString(), rval);
-                    }
+                    s0.beforeWriteVarName = varName;
+                    s0.beforeWriteVarState = s0.lookup(varName);
+
+                    Value rval = this.eval(args[1], c, s0, s1, EvalControl.Clear, cm);
 
                     IdThread.unsetActorContext();
                     if (lval == null) {
@@ -1947,12 +1915,14 @@ public abstract class Tool
                     res = ((OpValue) val).eval(this, args, c, s0, s1, control, cm);
                 } else {
 
-                    // this is where variable values are read eventually
-                    if (IdThread.getCurrentState() != null && IdThread.getCurrentState().containsKey(opNode.getName())) {
-                        TLCState state = IdThread.getCurrentState();
+                    // this is where variable values are read eventually. We add track the variables here already
+                    // for cases when the variable has no nested calls, e.g. tmStates = {rmState}, but we dont want
+                    if (s0 != null && s0.containsKey(opNode.getName())) {
+                        boolean isSet = val instanceof EnumerableValue;
                         String key = opNode.getName().toString();
-                        state.addChildIfAbsentOfCurrentContext(key, res);
+                        s0.addChildIfAbsentOfCurrentContext(key, res, isSet);
                     }
+
                     res = (Value) val;
                 }
             }
@@ -2243,7 +2213,7 @@ public abstract class Tool
                         // within an except, we possibly read variables again, e.g.
                         // [db EXCEPT ![k] = database[k] + 1]
                         // where this branch contains the inner database[k], which is a read
-                        IdThread.setReadDuringWriteContext();
+                        IdThread.setReadingActorContext();
 
                         Context c1 = c.cons(EXCEPT_AT, atVal);
                         Value rhs = this.eval(pairArgs[1], c1, s0, s1, control, coverage ? cm.get(pairNode) : cm);
@@ -2277,7 +2247,7 @@ public abstract class Tool
                                 varNode.addChildIfAbsent(argVal.toUnquotedString(), result);
                             }
                         } else {
-                            VarNode<String, IValue> fn = state.addChildIfAbsentOfCurrentContext(fnName, fcn);
+                            VarNode<String, IValue> fn = state.addChildIfAbsentOfCurrentContext(fnName, fcn, false);
                             if (fn != null) {
                                 fn.addChildIfAbsent(argVal.toUnquotedString(), result);
                             }
@@ -2380,7 +2350,7 @@ public abstract class Tool
                                 existingNode.addChildIfAbsent(sval.toUnquotedString(), fcnReturn);
                             }
                         } else {
-                            VarNode n = IdThread.getCurrentState().addChildIfAbsentOfCurrentContext(args[0].stn.toString(), rval);
+                            VarNode n = IdThread.getCurrentState().addChildIfAbsentOfCurrentContext(args[0].stn.toString(), rval, false);
                             n.addChildIfAbsent(sval.toUnquotedString(), fcnReturn);
                         }
                     }
@@ -2651,6 +2621,15 @@ public abstract class Tool
             case OPCODE_cup: {
                 Value arg1 = this.eval(args[0], c, s0, s1, control, cm);
                 Value arg2 = this.eval(args[1], c, s0, s1, control, cm);
+
+                if (s0.beforeWriteVarState != null && s0.beforeWriteVarName != null) {
+                    EnumerableValue newSet = arg1 == s0.beforeWriteVarState ? (EnumerableValue) arg2 : (EnumerableValue) arg1;
+                    VarNode<String, IValue> var = s0.addChildIfAbsentOfCurrentContext(s0.beforeWriteVarName.toString(), null, true);
+
+                    ValueEnumeration elements = newSet.elements(Ordering.RANDOMIZED);
+                    elements.forEach(el -> var.addChild(el));
+                }
+
                 if (arg1 instanceof Reducible) {
                     return setSource(expr, ((Reducible) arg1).cup(arg2));
                 } else if (arg2 instanceof Reducible) {

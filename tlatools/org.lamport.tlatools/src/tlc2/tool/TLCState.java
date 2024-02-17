@@ -22,7 +22,6 @@ import tlc2.util.PartialBoolean;
 import tlc2.value.IValue;
 import tlc2.value.IValueInputStream;
 import tlc2.value.IValueOutputStream;
-import tlc2.value.impl.FunctionValue;
 import tlc2.value.impl.Value;
 import util.Assert;
 import util.UniqueString;
@@ -278,13 +277,19 @@ public abstract class TLCState implements Serializable {
 
 	public VarNode<String, IValue> reads = new VarNode<>("reads", null);
 	public VarNode<String, IValue> writes = new VarNode<>("writes", null);
+	/** a reference a primed variables which can be used by nested expressions to know
+	 * where to append changes to */
+	public UniqueString beforeWriteVarName;
+	public IValue beforeWriteVarState;
 
 	public void clearReadsAndWrites() {
 		reads = new VarNode<>("reads", null);
 		writes = new VarNode<>("writes", null);
+		beforeWriteVarName = null;
+		beforeWriteVarState = null;
 	}
 
-	public VarNode<String, IValue> addChildIfAbsentOfCurrentContext(String key, IValue payload) {
+	public VarNode<String, IValue> addChildIfAbsentOfCurrentContext(String key, IValue payload, boolean isChildSet) {
 
 		if (this.actorContext == null || key == null) {
 			return null;
@@ -292,9 +297,9 @@ public abstract class TLCState implements Serializable {
 
 		switch (this.actorContext) {
 			case Reading:
-				return this.reads.addChildIfAbsent(key, payload);
+				return this.reads.addChildIfAbsent(key, payload, isChildSet);
 			case Writing:
-				return this.writes.addChildIfAbsent(key, payload);
+				return this.writes.addChildIfAbsent(key, payload, isChildSet);
 		}
 
 		return null;
@@ -319,7 +324,6 @@ public abstract class TLCState implements Serializable {
 	public ActorContext actorContext;
 	public enum ActorContext {
 		Writing,
-		Reading,
-		ReadDuringWrite, // when reading variables while on the right side of a primed expression
+		Reading
 	}
 }

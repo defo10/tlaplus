@@ -8,7 +8,7 @@ import java.util.*;
 
 public class VarNode<K extends Comparable<?>, V extends IValue> {
     public final K key;
-    public final V payload;
+    public V payload;
     public final Object children;
 
     public final boolean isChildSet;
@@ -159,7 +159,7 @@ public class VarNode<K extends Comparable<?>, V extends IValue> {
 
             for (IValue vals : children) {
                 try {
-                    keyValueBuilder.append(Json.toJson(vals)).append(",");
+                    keyValueBuilder.append(Json.toJson(vals).toUnquotedString().replace("\\", "")).append(",");
                 } catch (IOException e) {
                     System.out.println("Failed to parse vals as json:" + vals);
                 }

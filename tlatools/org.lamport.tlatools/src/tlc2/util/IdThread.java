@@ -105,10 +105,6 @@ public class IdThread extends Thread {
 		setActorContext(TLCState.ActorContext.Reading);
 	}
 
-	public static void setReadDuringWriteContext() {
-		setActorContext(TLCState.ActorContext.ReadDuringWrite);
-	}
-
 	public static void unsetActorContext() {
 		setActorContext(null);
 	}
